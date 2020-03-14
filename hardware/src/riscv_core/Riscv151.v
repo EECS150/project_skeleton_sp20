@@ -11,91 +11,101 @@ module Riscv151 #(
 );
     // Memories
     localparam BIOS_AWIDTH = 12;
-    localparam BIOS_DWITH = 32;
-    localparam BIOS_DEPTH = 4096;
+    localparam BIOS_DWITH  = 32;
+    localparam BIOS_DEPTH  = 4096;
 
-    wire [BIOS_AWIDTH-1:0] bios_addr0, bios_addr1;
-    wire [BIOS_DWIDTH-1:0] bios_rdata0, bios_rdata1;
+    wire [BIOS_AWIDTH-1:0] bios_addra, bios_addra;
+    wire [BIOS_DWIDTH-1:0] bios_douta, bios_doutb;
 
     // BIOS Memory
+    // Synchronous read: read takes one cycle
+    // Synchronous write: write takes one cycle
     XILINX_SYNC_RAM_DP #(
         .AWIDTH(BIOS_AWIDTH),
         .DWIDTH(BIOS_DWIDTH)
         .DEPTH(BIOS_DEPTH),
         .MEM_INIT_HEX_FILE(BIOS_MEM_HEX_FILE)
     ) bios_mem(
-        .q0(bios_rdata0),
-        .d0(),
-        .addr0(bios_addr0),
-        .we0(1'b0),
-        .q1(bios_rdata1),
-        .d1(),
-        .addr1(bios_addr1),
-        .we1(1'b0),
+        .q0(bios_douta),    // output
+        .d0(),              // intput
+        .addr0(bios_addra), // input
+        .we0(1'b0),         // input
+        .q1(bios_doutb),    // output
+        .d1(),              // input
+        .addr1(bios_addrb), // input
+        .we1(1'b0),         // input
         .clk(clk), .rst(rst));
 
     localparam DMEM_AWIDTH = 14;
     localparam DMEM_DWIDTH = 32;
     localparam DMEM_DEPTH = 16384;
 
-    wire [DMEM_AWIDTH-1:0] dmem_addr;
-    wire [DMEM_DWIDTH-1:0] dmem_rdata, dmem_wdata;
-    wire [3:0] dmem_we;
+    wire [DMEM_AWIDTH-1:0] dmem_addra;
+    wire [DMEM_DWIDTH-1:0] dmem_dina, dmem_douta;
+    wire [3:0] dmem_wea;
 
     // Data Memory
+    // Synchronous read: read takes one cycle
+    // Synchronous write: write takes one cycle
+    // Byte addressable: select which of the four bytes to write
     SYNC_RAM_BYTEADDR #(
         .AWIDTH(DMEM_AWIDTH),
         .DWIDTH(DMEM_DWIDTH)
         .DEPTH(DMEM_DEPTH)
     ) dmem (
-        .q(dmem_rdata),
-        .d(dmem_wdata),
-        .addr(dmem_addr),
-        .wbe(dmem_we),
+        .q(dmem_douta),    // output
+        .d(dmem_dina),     // input
+        .addr(dmem_addra), // input
+        .wbe(dmem_wea),    // input
         .clk(clk), .rst(rst));
 
     localparam IMEM_AWIDTH = 14;
     localparam IMEM_DWIDTH = 32;
     localparam IMEM_DEPTH = 16384;
 
-    wire [IMEM_AWIDTH-1:0] imem_addr0, imem_addr1;
-    wire [IMEM_DWIDTH-1:0] imem_rdata0, imem_rdata1;
-    wire [IMEM_DWIDTH-1:0] imem_wdata0, imem_wdata1;
-    wire [3:0] imem_we0, imem_we1;
+    wire [IMEM_AWIDTH-1:0] imem_addra, imem_addrb;
+    wire [IMEM_DWIDTH-1:0] imem_douta, imem_doutb;
+    wire [IMEM_DWIDTH-1:0] imem_dina, imem_dinb;
+    wire [3:0] imem_wea, imem_web;
 
     // Instruction Memory
+    // Synchronous read: read takes one cycle
+    // Synchronous write: write takes one cycle
+    // Byte addressable: select which of the four bytes to write
     XILINX_SYNC_RAM_DP_BYTEADDR #(
         .AWIDTH(IMEM_AWIDTH),
         .DWIDTH(IMEM_DWIDTH)
         .DEPTH(IMEM_DEPTH)
     ) imem (
-        .q0(imem_rdata0),
-        .d0(imem_wdata0),
-        .addr0(imem_addr0),
-        .wbe0(imem_we0),
-        .q1(imem_rdata1),
-        .d1(imem_wdata1),
-        .addr1(imem_addr1),
-        .wbe1(imem_we1),
+        .q0(imem_douta),    // output
+        .d0(imem_dina),     // input
+        .addr0(imem_addra), // input
+        .wbe0(imem_wea),    // input
+        .q1(imem_doutb),    // output
+        .d1(imem_dinb),     // input
+        .addr1(imem_addrb), // input
+        .wbe1(imem_web),    // input
         .clk(clk), .rst(rst));
 
     wire rf_we;
-    wire [4:0] rf_raddr1, rf_raddr2, rf_waddr;
-    wire [31:0] rf_wdata;
-    wire [31:0] rf_rdata1, rf_rdata2;
+    wire [4:0]  rf_ra1, rf_ra2, rf_wa;
+    wire [31:0] rf_wd;
+    wire [31:0] rf_rd1, rf_rd2;
 
+    // Asynchronous read: read data is available in the same cycle
+    // Synchronous write: write takes one cycle
     REGFILE_1R2W # (
         .AWIDTH(5),
         .DWIDTH(32),
         .DEPTH(32)
     ) rf (
-        .d0(rf_wdata),
-        .addr0(rf_waddr),
-        .we0(rf_we),
-        .q1(rf_rdata1),
-        .addr1(rf_raddr1),
-        .q2(rf_rdata2),
-        .addr2(rf_raddr2),
+        .d0(rf_wd),     // input
+        .addr0(rf_ra1), // input
+        .we0(rf_we),    // input
+        .q1(rf_rd1),    // output
+        .addr1(rf_ra1), // input
+        .q2(rf_rd2),    // output
+        .addr2(rf_ra2), // input
         .clk(clk));
 
     // UART Receiver
