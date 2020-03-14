@@ -82,7 +82,7 @@ Good time management and good design organization is critical to your success.
 
 \subsection{Tentative Deadlines}
 \label{tentative_deadlines}
-The following is a brief description of each checkpoint and approximately how many weeks will be alloted to each one. Note that this schedule is tentative and is subjected to change as the semester progresses. The checkpoints are mostly for you to work progressively towards to goal of building a fully-functional RISC-V core. Do not expect to start working on the project last minute.
+The following is a brief description of each checkpoint and approximately how many weeks will be alloted to each one. Note that this schedule is tentative and is subjected to change as the semester progresses.
 
 %The current schedule is summarised at the end of the document in Section \ref{project_timeline}.
 
@@ -144,10 +144,10 @@ Then reclone your repo and add the skeleton repo as a remote:
 
 To pull project updates from the skeleton repo, run \verb|git pull staff master|.
 
-To get a team repo, fill one line in the Google spreadsheet posted on Piazza with your team information (names, Github logins).
+To get a team repo, fill the Google spreadsheet posted on Piazza with your team information (names, Github logins). If you work in team, only one person is required to fill the form.
 
 \textbf{You should check frequently for updates to the skeleton files.} Whenever you resume your work on the project,
-it is highly suggested that you do git pull to get the latest update.
+it is highly suggested that you do git pull from the skeleton repo to get the latest update.
 Update announcements will be posted to Piazza.
 
 \subsection{Integrate Designs from Labs} \label{past_designs}
@@ -252,15 +252,13 @@ We have provided a register file module for you in \verb|EECS151.v|: \verb|REGFI
 
 \subsection{RAMs}
 \label{ram_info}
-In this project, we will be using inferred block RAMs to implement memories for the processor.
+In this project, we will be using some memory blocks defined in \verb|EECS151.v| to implement memories for the processor.
+As you may recall in previous lab exercises, the memory blocks can be either synthesized to Block RAMs or LUTRAMs on FPGA.
+For the project, our memory blocks will be mapped to Block RAMs. Therefore, read and write to memory are \textbf{synchronous}.
 
 \subsubsection{Initialization}
-The Verilog \verb|$readmemb(filename, path to 2D reg, start addr, end addr)| and \verb|$readmemh()| system tasks can be used to initialize a 2D reg with a text file containing the desired contents of the memory (in binary or hex respectively).
-These system tasks are placed inside an \verb|initial| block and point to a particular 2D reg instance to initialize.
-If a 2D reg isn't initialized it is filled with Xs.
 
-For synthesis, the BIOS memory is initialized with the contents of the BIOS program, and the other memories are left uninitialized (zeroed out)\\
-(see \verb|src/memories/{imem, dmem, bios_mem}.v|).
+For synthesis, the BIOS memory is initialized with the contents of the BIOS program, and the other memories are zeroed out.
 
 For simulation, the provided testbenches initialize the BIOS memory with a program specified by the testbench (see \verb|sim/assembly_testbench.v|).
 
@@ -649,7 +647,7 @@ If doing it electronically, you can use Inkscape, Google Drawings, draw.io or an
 You should be able to describe in detail any smaller sub-blocks in your diagram.
 Though the textbook diagrams are a decent starting place, remember that they often use asynchronous-read RAMs for the instruction and data memories, and we will be using synchronous-read block RAMs.
 
-Additionally, you will be asked to provide short answers to the following questions. The questions are intended to make you consider all possible cases that might happen when your processor execute instructions, such as data or control hazards.
+Additionally, you will be asked to provide short answers to the following questions based on how you structure your block diagram. The questions are intended to make you consider all possible cases that might happen when your processor execute instructions, such as data or control hazards. It might be a good idea to take a moment to think of the questions first, then draw your diagram to address them.
 
 \begin{enumerate}
 \item How many stages is the datapath you've drawn? (i.e. How many cycles does it take to execute 1 instruction?)
@@ -724,7 +722,7 @@ Checkoff will consist of a demonstration of the BIOS functionality, loading a pr
     \midrule
     Block Diagram, RISC-V ISA Questions, IO code & \blockDiagramDueDate & Submit your diagram and answers to Gradescope. Push your IO code to your Github repository.\\
     \midrule
-    Revised Block Diagram, Working ALU, Instructional Decoder, Basic datapath and control & \ALUDueDate & Check in your code to Github. Go over your RISC-V microarchitecture with TA\\
+    Revised Block Diagram, Working ALU, Instructional Decoder, Basic datapath and control & \ALUDueDate \linebreak Check in code to Github & Check in your code to Github. Go over your RISC-V microarchitecture with TA\\
     \midrule
     RISC-V CPU & \baseCPUDueDate \linebreak Check in code to Github & Demonstrate that the BIOS works, you can use \verb|hex_to_serial| to load the \verb|echo| program, \verb|jal| to it from the BIOS, and have that program successfully execute. Load the mmult program with \verb|hex_to_serial|, \verb|jal| to it, and have it execute successfully and return the benchmarking results and correct checksum. Your CPI should be under 1.2\\
     \bottomrule
