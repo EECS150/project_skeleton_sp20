@@ -20,7 +20,7 @@
 
 srcdir  = .
 
-main = project_spec
+main = fpga_project
 srcs = $(wildcard *.tex)
 figs = $(wildcard figs/*)
 bibs =
@@ -46,7 +46,7 @@ ifneq ($(strip $(bibs)),)
 endif
 	texfot pdflatex -shell-escape $(main)
 
-junk += $(output_pdf) *.aux *.log *.toc *.out _minted-project_spec
+junk += $(output_pdf) *.aux *.log *.toc *.out _minted-fpga_project
 
 #------------------------------------------------------------
 # Other Targets
