@@ -14,7 +14,7 @@ module Riscv151 #(
     localparam BIOS_DWITH  = 32;
     localparam BIOS_DEPTH  = 4096;
 
-    wire [BIOS_AWIDTH-1:0] bios_addra, bios_addra;
+    wire [BIOS_AWIDTH-1:0] bios_addra, bios_addrb;
     wire [BIOS_DWIDTH-1:0] bios_douta, bios_doutb;
 
     // BIOS Memory
