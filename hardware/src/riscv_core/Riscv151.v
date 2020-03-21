@@ -94,7 +94,7 @@ module Riscv151 #(
 
     // Asynchronous read: read data is available in the same cycle
     // Synchronous write: write takes one cycle
-    REGFILE_1R2W # (
+    REGFILE_1W2R # (
         .AWIDTH(5),
         .DWIDTH(32),
         .DEPTH(32)

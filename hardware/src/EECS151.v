@@ -457,7 +457,7 @@ endmodule // XILINX_SYNC_RAM_DP
 
 // Register File with single-port Write (port 0), dual-port Read (port 1 and 2)
 // Write is synchronous, Read is asynchronous
-module REGFILE_1R2W(d0, addr0, we0, q1, addr1, q2, addr2, clk);
+module REGFILE_1W2R(d0, addr0, we0, q1, addr1, q2, addr2, clk);
     parameter DWIDTH = 8;               // Data width
     parameter AWIDTH = 8;               // Address width
     parameter DEPTH = 256;              // Memory depth
