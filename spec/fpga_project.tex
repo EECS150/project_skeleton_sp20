@@ -190,7 +190,7 @@ We suggest you keep these with the provided source files in \verb|hardware/src| 
   \item \texttt{software}
     \begin{itemize}
       \item \verb|bios151v3|: The BIOS program, which allows us to interact with our CPU via the UART. You need to compile it before creating a bitstream or running a simulation.
-      \item \verb|echo|: The echo program, which emulates the FSM from Lab 5 in software.
+      \item \verb|echo|: The echo program, which emulates the echo test of Lab 6 in software.
       \item \verb|assembly_tests|: Use this as a template to write assembly tests for your processor designed to run in simulation.
       \item \verb|c_example|: Use this as an example to write C programs.
       \item \verb|mmult|: This is a program to be run on the FPGA for Checkpoint 2. It generates 2 matrices and multiplies them. Then it returns a checksum to verify the correct result.
@@ -374,7 +374,7 @@ This prevents programs from being self-modifying, which would drastically compli
 \subsubsection{Memory Mapped I/O}
 \label{mmio}
 At this stage in the project the only way to interact with your CPU is through the UART.
-The UART from Lab 5 accomplishes the low-level task of sending and receiving bits from the serial lines, but you will need a way for your CPU to send and receive bytes to and from the UART.
+The UART from Lab 6 accomplishes the low-level task of sending and receiving bits from the serial lines, but you will need a way for your CPU to send and receive bytes to and from the UART.
 To accomplish this, we will use memory-mapped I/O, a technique in which registers of I/O devices are assigned memory addresses.
 This enables load and store instructions to access the I/O devices as if they were memory.
 
@@ -1042,7 +1042,7 @@ To do this, simply cd to the \verb|software/bios151v3| directory and make the .h
 “make”. This should generate the .hex file using the compiler tailored to our ISA. The
 block RAM will be instantiated with the contents of the .hex file.
 When you get your design to synthesize and impact to the board, open up screen using the
-same command from Lab 5:
+same command from Lab 6:
 
 \verb|screen $SERIALTTY 115200|
 
