@@ -1,12 +1,12 @@
 module Riscv151 #(
-    parameter CPU_CLOCK_FREQ = 50_000_000,
-    parameter RESET_PC = 32'h4000_0000,
-    parameter BAUD_RATE = 115200,
+    parameter CPU_CLOCK_FREQ    = 50_000_000,
+    parameter RESET_PC          = 32'h4000_0000,
+    parameter BAUD_RATE         = 115200,
     parameter BIOS_MEM_HEX_FILE = ""
-)(
-    input clk,
-    input rst,
-    input FPGA_SERIAL_RX,
+) (
+    input  clk,
+    input  rst,
+    input  FPGA_SERIAL_RX,
     output FPGA_SERIAL_TX
 );
     // Memories
