@@ -1,0 +1,7 @@
+*.aux
+*.toc
+*.out
+*.log
+_minted*
+*.swp
+
