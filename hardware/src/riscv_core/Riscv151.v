@@ -11,7 +11,7 @@ module Riscv151 #(
 );
     // Memories
     localparam BIOS_AWIDTH = 12;
-    localparam BIOS_DWITH  = 32;
+    localparam BIOS_DWIDTH = 32;
     localparam BIOS_DEPTH  = 4096;
 
     wire [BIOS_AWIDTH-1:0] bios_addra, bios_addrb;
@@ -22,7 +22,7 @@ module Riscv151 #(
     // Synchronous write: write takes one cycle
     XILINX_SYNC_RAM_DP #(
         .AWIDTH(BIOS_AWIDTH),
-        .DWIDTH(BIOS_DWIDTH)
+        .DWIDTH(BIOS_DWIDTH),
         .DEPTH(BIOS_DEPTH),
         .MEM_INIT_HEX_FILE(BIOS_MEM_HEX_FILE)
     ) bios_mem(
@@ -50,7 +50,7 @@ module Riscv151 #(
     // Byte addressable: select which of the four bytes to write
     SYNC_RAM_BYTEADDR #(
         .AWIDTH(DMEM_AWIDTH),
-        .DWIDTH(DMEM_DWIDTH)
+        .DWIDTH(DMEM_DWIDTH),
         .DEPTH(DMEM_DEPTH)
     ) dmem (
         .q(dmem_douta),    // output
@@ -74,7 +74,7 @@ module Riscv151 #(
     // Byte addressable: select which of the four bytes to write
     XILINX_SYNC_RAM_DP_BYTEADDR #(
         .AWIDTH(IMEM_AWIDTH),
-        .DWIDTH(IMEM_DWIDTH)
+        .DWIDTH(IMEM_DWIDTH),
         .DEPTH(IMEM_DEPTH)
     ) imem (
         .q0(imem_douta),    // output
@@ -133,7 +133,7 @@ module Riscv151 #(
         .CLOCK_FREQ(CPU_CLOCK_FREQ),
         .BAUD_RATE(BAUD_RATE)) uart_tx (
         .clk(clk),
-        .rst(reset),
+        .rst(rst),
         .data_in(uart_tx_data_in),             // input
         .data_in_valid(uart_tx_data_in_valid), // input
         .data_in_ready(uart_tx_data_in_ready), // output
