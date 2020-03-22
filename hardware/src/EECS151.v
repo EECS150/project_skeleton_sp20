@@ -276,12 +276,12 @@ module XILINX_SYNC_RAM_DP(q0, d0, addr0, we0, q1, d1, addr1, we1, clk, rst);
     input rst;
     input [DWIDTH-1:0] d0;               // Data input
     input [AWIDTH-1:0] addr0;            // Address input
-    input [DWIDTH/8-1:0] we0;
+    input we0;
     output [DWIDTH-1:0] q0;
 
     input [DWIDTH-1:0] d1;               // Data input
     input [AWIDTH-1:0] addr1;            // Address input
-    input [DWIDTH/8-1:0] we1;
+    input we1;
     output [DWIDTH-1:0] q1;
     (* ram_style = "block" *) reg [DWIDTH-1:0] mem [DEPTH-1:0];
 
