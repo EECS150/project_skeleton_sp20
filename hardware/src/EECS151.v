@@ -222,7 +222,7 @@ module SYNC_RAM(q, d, addr, we, clk);
 endmodule // SYNC_RAM
 
 // Single-ported RAM with synchronous read with write byte-enable
-module SYNC_RAM_BYTEADDR(q, d, addr, we, clk);
+module SYNC_RAM_BYTEADDR(q, d, addr, wbe, clk);
     parameter DWIDTH = 8;               // Data width
     parameter AWIDTH = 8;               // Address width
     parameter DEPTH = 256;              // Memory depth
@@ -250,9 +250,9 @@ module SYNC_RAM_BYTEADDR(q, d, addr, we, clk);
         end
     end
 
-    genvar i;
+    genvar k;
     generate
-    for (i = 0; i < DWIDTH/8; i = i+1) begin
+    for (k = 0; k < DWIDTH/8; k = k+1) begin
         always @(posedge clk) begin
             if (wbe[i])
                 mem[addr][i*8 +: 8] <= d[i*8 +: 8];
@@ -329,7 +329,7 @@ module XILINX_SYNC_RAM_DP(q0, d0, addr0, we0, q1, d1, addr1, we1, clk, rst);
 endmodule // XILINX_SYNC_RAM_DP
 
 // Xilinx FPGA Dual-ported RAM with synchronous read with write byte-enable
-module XILINX_SYNC_RAM_DP_BYTEADDR(q0, d0, addr0, we0, q1, d1, addr1, we1, clk, rst);
+module XILINX_SYNC_RAM_DP_BYTEADDR(q0, d0, addr0, wbe0, q1, d1, addr1, wbe1, clk, rst);
     parameter DWIDTH = 8;               // Data width
     parameter AWIDTH = 8;               // Address width
     parameter DEPTH = 256;              // Memory depth
@@ -366,11 +366,11 @@ module XILINX_SYNC_RAM_DP_BYTEADDR(q0, d0, addr0, we0, q1, d1, addr1, we1, clk, 
     reg [DWIDTH-1:0] read0_reg_val;
     reg [DWIDTH-1:0] read1_reg_val;
 
-    genvar i;
+    genvar j;
     generate
-    for (i = 0; i < 4; i = i+1) begin
+    for (j = 0; j < 4; j = j+1) begin
         always @(posedge clk) begin
-            if (wbe0[i])
+            if (wbe0[j])
                 mem[addr0][i*8 +: 8] <= d0[i*8 +: 8];
         end
     end
@@ -383,12 +383,12 @@ module XILINX_SYNC_RAM_DP_BYTEADDR(q0, d0, addr0, we0, q1, d1, addr1, we1, clk, 
             read0_reg_val <= mem[addr0];
     end
 
-    genvar j;
+    genvar k;
     generate
-    for (j = 0; j < 4; j = j+1) begin
+    for (k = 0; k < 4; k = k+1) begin
         always @(posedge clk) begin
-            if (wbe1[j])
-                mem[addr1][j*8 +: 8] <= d1[j*8 +: 8];
+            if (wbe1[k])
+                mem[addr1][k*8 +: 8] <= d1[k*8 +: 8];
         end
     end
     endgenerate
