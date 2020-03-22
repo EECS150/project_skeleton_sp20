@@ -38,7 +38,7 @@ module Riscv151 #(
 
     localparam DMEM_AWIDTH = 14;
     localparam DMEM_DWIDTH = 32;
-    localparam DMEM_DEPTH = 16384;
+    localparam DMEM_DEPTH  = 16384;
 
     wire [DMEM_AWIDTH-1:0] dmem_addra;
     wire [DMEM_DWIDTH-1:0] dmem_dina, dmem_douta;
@@ -47,8 +47,8 @@ module Riscv151 #(
     // Data Memory
     // Synchronous read: read takes one cycle
     // Synchronous write: write takes one cycle
-    // Byte addressable: select which of the four bytes to write
-    SYNC_RAM_BYTEADDR #(
+    // Write-byte-enable: select which of the four bytes to write
+    SYNC_RAM_WBE #(
         .AWIDTH(DMEM_AWIDTH),
         .DWIDTH(DMEM_DWIDTH),
         .DEPTH(DMEM_DEPTH)
@@ -61,7 +61,7 @@ module Riscv151 #(
 
     localparam IMEM_AWIDTH = 14;
     localparam IMEM_DWIDTH = 32;
-    localparam IMEM_DEPTH = 16384;
+    localparam IMEM_DEPTH  = 16384;
 
     wire [IMEM_AWIDTH-1:0] imem_addra, imem_addrb;
     wire [IMEM_DWIDTH-1:0] imem_douta, imem_doutb;
@@ -71,8 +71,8 @@ module Riscv151 #(
     // Instruction Memory
     // Synchronous read: read takes one cycle
     // Synchronous write: write takes one cycle
-    // Byte addressable: select which of the four bytes to write
-    XILINX_SYNC_RAM_DP_BYTEADDR #(
+    // Write-byte-enable: select which of the four bytes to write
+    XILINX_SYNC_RAM_DP_WBE #(
         .AWIDTH(IMEM_AWIDTH),
         .DWIDTH(IMEM_DWIDTH),
         .DEPTH(IMEM_DEPTH)
