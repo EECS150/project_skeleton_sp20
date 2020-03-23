@@ -3,28 +3,27 @@ VERILOG_SRCS := $(wildcard src/*.v)
 VERILOG_SRCS += $(wildcard src/io_circuits/*.v)
 VERILOG_SRCS += $(wildcard src/riscv_core/*.v)
 
-vivado_proj_file = $(proj)_proj/$(proj)_proj.xpr
-
+Z1TOP_XPR := z1top_proj/z1top_proj.xpr
 sw = assembly_tests
 
-$(vivado_proj_file): $(VERILOG_SRCS)
-		vivado -mode batch -source scripts/build_project.tcl -tclargs $(proj)
+$(Z1TOP_XPR): $(VERILOG_SRCS)
+		vivado -mode batch -source scripts/build_project.tcl
 
 .PHONY: build-project
-build-project: $(vivado_proj_file)
+build-project: $(Z1TOP_XPR)
 
 .PHONY: sim
 sim:
 		cd ../software/$(sw) && make
-		vivado -mode batch -source scripts/sim.tcl -tclargs $(proj) $(tb) $(sw)
+		vivado -mode batch -source scripts/sim.tcl -tclargs $(tb) $(sw)
 
 .PHONY: write-bitstream
-write-bitstream: $(vivado_proj_file)
-		vivado -mode batch -source scripts/write_bitstream.tcl -tclargs $(proj)
+write-bitstream: $(Z1TOP_XPR)
+		vivado -mode batch -source scripts/write_bitstream.tcl
 
 .PHONY: program-fpga
 program-fpga:
-		vivado -mode batch -source scripts/program_fpga.tcl -tclargs $(bs)
+		vivado -mode batch -source scripts/program_fpga.tcl
 
 .PHONY: clean
 # "make clean" won't remove your project folders

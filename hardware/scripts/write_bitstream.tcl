@@ -1,5 +1,5 @@
 
-set project_name [lindex $argv 0]
+set project_name "z1top"
 set sources_file scripts/${project_name}.tcl
 
 if {![file exists $sources_file]} {

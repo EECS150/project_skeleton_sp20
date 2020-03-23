@@ -1,6 +1,6 @@
 
-set project_name   [lindex $argv 0]
-set testbench_name [lindex $argv 1]
+set project_name   "z1top"
+set testbench_name [lindex $argv 0]
 
 set sources_file scripts/${project_name}.tcl
 
