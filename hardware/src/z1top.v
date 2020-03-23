@@ -1,19 +1,19 @@
 `timescale 1ns/1ns
 
-module z1top_riscv151 (
-    input CLK_125MHZ_FPGA,
-    input [3:0] BUTTONS,
-    input [1:0] SWITCHES,
+module z1top (
+    input  CLK_125MHZ_FPGA,
+    input  [3:0] BUTTONS,
+    input  [1:0] SWITCHES,
     output [5:0] LEDS,
 
-    input FPGA_SERIAL_RX,
+    input  FPGA_SERIAL_RX,
     output FPGA_SERIAL_TX
 );
 
     wire cpu_clk;
 
     localparam CPU_CLOCK_PERIOD    = 20;
-    localparam CPU_CLOCK_FREQ = 1_000_000_000 / CPU_CLOCK_PERIOD;
+    localparam CPU_CLOCK_FREQ      = 1_000_000_000 / CPU_CLOCK_PERIOD;
     // Clocking wizard IP from Vivado (wrapper of the PLLE module)
     // Generate CPU_CLOCK_FREQ clock from 125 MHz clock
     // PLL FREQ = (CLKFBOUT_MULT_F * 1000 / (CLKINx_PERIOD * DIVCLK_DIVIDE) must be within (800.000 MHz - 1600.000 MHz)
@@ -58,5 +58,6 @@ module z1top_riscv151 (
         .FPGA_SERIAL_RX(FPGA_SERIAL_RX)
     );
 
+    assign LEDS[5:0] = 6'b111111;
 
 endmodule
