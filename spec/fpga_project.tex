@@ -183,7 +183,7 @@ We suggest you keep these with the provided source files in \verb|hardware/src| 
       \item \texttt{sim}
         \begin{itemize}
           \item \verb|assembly_testbench.v|: Starting point for testing your CPU. Works with the software in \texttt{assembly\_tests}.
-          \item \verb|echo_testbench.v|: Runs the software in \texttt{echo} on your CPU. The software implements the echo FSM from lab 5, and the testbench controls an off-chip UART to test it.
+          \item \verb|echo_testbench.v|: Runs the software in \texttt{echo} on your CPU. The software implements the echo test from lab 6, and the testbench controls an off-chip UART to test it.
         \end{itemize}
     \end{itemize}
   \item \texttt{software}
@@ -197,7 +197,7 @@ We suggest you keep these with the provided source files in \verb|hardware/src| 
 \end{itemize}
 
 To compile \texttt{software} go into a program directory and run \texttt{make}.
-To build a bitstream run \texttt{make impl} in \texttt{hardware}.
+To build a bitstream run \texttt{make write-bitstream} in \texttt{hardware}.
 
 \subsection{RISC-V 151 ISA}
 Table \ref{tab:ISA} contains all of the instructions your processor is responsible for supporting.
@@ -463,10 +463,7 @@ There are several files:
 \label{assembly_tests}
 Hand written assembly tests are in \verb|software/assembly_tests/start.s| and the corresponding testbench is in \verb|hardware/sim/assembly_testbench.v|.
 To run the test, run:\\
-\verb|make sim/assembly_testbench.fst| (iverilog) or \verb|make sim/assembly_testbench.vpd| (VCS).
-
-If you want to forcibly re-run the test even though you didn't change the Verilog, run:\\
-\verb|make -B sim/assembly_testbench.fst|
+\verb|make sim tb=assembly_testbench|
 
 \verb|start.s| contains assembly that's compiled and loaded into the BIOS RAM by the testbench.
 \begin{minted}[breaklines]{asm}
@@ -486,6 +483,8 @@ The \verb|assembly_testbench| toggles the clock one cycle at time and waits for 
 Once \verb|x20| contains 1, the testbench inspects the value in \verb|x1| and checks it is 300, which indicates your processor correctly executed the add instruction.
 
 If the testbench times out it means \verb|x20| never became 1, so the processor got stuck somewhere or \verb|x20| was written with another value.
+
+You should add your own tests to verify that your processor can execute different instructions correctly. Modify the file \verb|start.s| to add your assembly code, then rerun the RTL simulation.
 
 \subsection{RISC-V ISA Tests}
 You will need the CSR instructions to work before you can use this test suite, and you should have confidence in your hand-written assembly tests.
