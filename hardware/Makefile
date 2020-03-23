@@ -3,8 +3,19 @@ VERILOG_SRCS := $(wildcard src/*.v)
 VERILOG_SRCS += $(wildcard src/io_circuits/*.v)
 VERILOG_SRCS += $(wildcard src/riscv_core/*.v)
 
-Z1TOP_XPR = z1top_proj/z1top_proj.xpr
+Z1TOP_XPR := z1top_proj/z1top_proj.xpr
+
+tb := assembly_testbench
+
+ifeq ($(tb), assembly_testbench)
 sw = assembly_tests
+else ifeq ($(tb), echo_testbench)
+sw = echo
+else ifeq ($(tb), c_testbench)
+sw = c_test
+else ifeq ($(tb), isa_testbench)
+sw = riscv-isa-tests
+endif
 
 $(Z1TOP_XPR): $(VERILOG_SRCS)
 		vivado -mode batch -source scripts/build_project.tcl
