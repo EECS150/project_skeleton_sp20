@@ -183,7 +183,8 @@ We suggest you keep these with the provided source files in \verb|hardware/src| 
       \item \texttt{sim}
         \begin{itemize}
           \item \verb|assembly_testbench.v|: Starting point for testing your CPU. Works with the software in \texttt{assembly\_tests}.
-          \item \verb|echo_testbench.v|: Runs the software in \texttt{echo} on your CPU. The software implements the echo test from lab 6, and the testbench controls an off-chip UART to test it.
+          \item More to come.
+          %\item \verb|echo_testbench.v|: Runs the software in \texttt{echo} on your CPU. The software implements the echo test from lab 6, and the testbench controls an off-chip UART to test it.
         \end{itemize}
     \end{itemize}
   \item \texttt{software}
@@ -701,7 +702,7 @@ label: addi x2, x1, 4
 \item Where does the BIOS mem go? How about the IMEM (in the memory stage)?
 \end{enumerate}
 
-Submit your block diagram and answers to Gradescope by \blockDiagramDueDate. If you are working in team, only one of you is required to upload the report. Please also remember to push your working IO circuits to your Github repository: the TA will test your circuits. The TA will also provide feedback for your block diagram proposal if applicable.
+Commit your block diagram and your report to your team repository under \verb|sp20_teamXX/docs| by \blockDiagramDueDate. Please also remember to push your working IO circuits to your Github repository. The TA will also provide feedback for your block diagram proposal if applicable.
 
 \subsubsection{\ALUTaskName: Revised RISC-V microarchitecture, Basic Datapath + Control}
 This checkpoint is for TA to keep track of your current progress, and to ensure that your implementation is on the right track. The TA will go over your design with you. You are expected to have a fully-functioning ALU module and a complete Instructional Decoder. Although highly encouraged, it is not required to pass any assembly test for this checkpoint.
@@ -718,7 +719,7 @@ Checkoff will consist of a demonstration of the BIOS functionality, loading a pr
     \toprule
     \textbf{Deliverable} & \textbf{Due Date} & \textbf{Description} \\
     \midrule
-    Block Diagram, RISC-V ISA Questions, IO code & \blockDiagramDueDate & Submit your diagram and answers to Gradescope. Push your IO code to your Github repository.\\
+    Block Diagram, RISC-V ISA Questions, IO code & \blockDiagramDueDate & Push your block diagram, your writeup, and IO code to your Github repository.\\
     \midrule
     Revised Block Diagram, Working ALU, Instructional Decoder, Basic datapath and control & \ALUDueDate \linebreak Check in code to Github & Check in your code to Github. Go over your RISC-V microarchitecture with TA\\
     \midrule
