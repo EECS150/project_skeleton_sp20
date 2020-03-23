@@ -4,4 +4,6 @@
 *.log
 _minted*
 *.swp
-
+hardware/src/.Xil
+hardware/src/*proj
+hardware/src/bitstream_files
