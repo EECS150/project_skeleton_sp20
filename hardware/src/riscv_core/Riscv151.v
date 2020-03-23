@@ -2,7 +2,7 @@ module Riscv151 #(
     parameter CPU_CLOCK_FREQ    = 50_000_000,
     parameter RESET_PC          = 32'h4000_0000,
     parameter BAUD_RATE         = 115200,
-    parameter BIOS_MEM_HEX_FILE = ""
+    parameter BIOS_MEM_HEX_FILE = "bios151v3.mif"
 ) (
     input  clk,
     input  rst,
@@ -100,7 +100,7 @@ module Riscv151 #(
         .DEPTH(32)
     ) rf (
         .d0(rf_wd),     // input
-        .addr0(rf_ra1), // input
+        .addr0(rf_wa),  // input
         .we0(rf_we),    // input
         .q1(rf_rd1),    // output
         .addr1(rf_ra1), // input
