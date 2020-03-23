@@ -1,5 +1,5 @@
 
-set bitstream_file "z1top.bit"
+set bitstream_file [lindex $argv 0]
 
 if {![file exists $bitstream_file]} {
     puts "Invalid bitstream file!"
