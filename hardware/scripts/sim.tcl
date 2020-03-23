@@ -21,5 +21,8 @@ set_property top ${testbench_name} [get_filesets sim_1]
 update_compile_order -fileset sim_1
 
 ## Run Simulation
-launch_simulation
-run all
+launch_simulation -step compile
+launch_simulation -step elaborate
+
+cd ${project_name}_proj/${project_name}_proj.sim/sim_1/behav/xsim
+xsim ${testbench_name}_behav -R
