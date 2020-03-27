@@ -16,7 +16,7 @@
 \usepackage{makecell}
 \usepackage{gensymb}
 \graphicspath{{images/}}
-
+\usepackage{adjustbox}
 \usepackage{color}
 \definecolor{rltred}{rgb}{0.75,0,0}
 \definecolor{rltgreen}{rgb}{0,0.5,0}
@@ -182,9 +182,13 @@ We suggest you keep these with the provided source files in \verb|hardware/src| 
         \end{itemize}
       \item \texttt{sim}
         \begin{itemize}
-          \item \verb|assembly_testbench.v|: Starting point for testing your CPU. Works with the software in \texttt{assembly\_tests}.
-          \item More to come.
-          %\item \verb|echo_testbench.v|: Runs the software in \texttt{echo} on your CPU. The software implements the echo test from lab 6, and the testbench controls an off-chip UART to test it.
+          \item \verb|assembly_testbench.v|: Starting point for testing your CPU. Works with the software in \texttt{software/assembly\_tests}.
+          \item \verb|echo_testbench.v|: The testbench works with the software in \texttt{software/echo}. The CPU reads a character sent from the serial rx line and echoes it back to the serial tx line.
+          \item \verb|isa_testbench.v|: The testbench works with the RISC-V ISA test suite in
+
+\texttt{software/riscv-isa-tests}.
+
+The testbench only runs one test at a time. To run multiple tests, use the script we provide (see \ref{riscv-isa-tests}).
         \end{itemize}
     \end{itemize}
   \item \texttt{software}
@@ -193,6 +197,7 @@ We suggest you keep these with the provided source files in \verb|hardware/src| 
       \item \verb|echo|: The echo program, which emulates the echo test of Lab 6 in software.
       \item \verb|assembly_tests|: Use this as a template to write assembly tests for your processor designed to run in simulation.
       \item \verb|c_example|: Use this as an example to write C programs.
+      \item \verb|riscv-isa-tests|: A comprehensive test suite for your CPU. Available after doing \verb|git submodule| (see \ref{riscv-isa-tests}).
       \item \verb|mmult|: This is a program to be run on the FPGA for Checkpoint 2. It generates 2 matrices and multiplies them. Then it returns a checksum to verify the correct result.
     \end{itemize}
 \end{itemize}
@@ -386,19 +391,21 @@ Table~\ref{mem_map1} shows the memory map for this stage of the project.
   \begin{center}
     \caption{I/O Memory Map}
     \label{mem_map1}
+    \begin{adjustbox}{width=\columnwidth,center}
     \begin{tabular}{l l l l}
       \toprule
       \textbf{Address} & \textbf{Function} & \textbf{Access} & \textbf{Data Encoding}\\
       \midrule
-      \verb|32'h80000000| & UART control & Read & \verb|{30'b0, data_out_valid, data_in_ready}| \\
-      \verb|32'h80000004| & UART receiver data & Read & \verb|{24'b0, data_out}| \\
-      \verb|32'h80000008| & UART transmitter data & Write & \verb|{24'b0, data_in}| \\
+      \verb|32'h80000000| & UART control & Read & \verb|{30'b0, uart_rx_data_out_valid, uart_tx_data_in_ready}| \\
+      \verb|32'h80000004| & UART receiver data & Read & \verb|{24'b0, uart_rx_data_out}| \\
+      \verb|32'h80000008| & UART transmitter data & Write & \verb|{24'b0, uart_tx_data_in}| \\
       \midrule
       \verb|32'h80000010| & Cycle counter & Read & Clock cycles elapsed \\
       \verb|32'h80000014| & Instruction counter & Read & Number of instructions executed \\
       \verb|32'h80000018| & Reset counters to 0 & Write & N/A \\
       \bottomrule
     \end{tabular}
+    \end{adjustbox}
   \end{center}
 \end{table}
 
@@ -407,8 +414,8 @@ Your UART should respond to \verb|sw, sh, and sb| for the transmitter data addre
 
 You should treat I/O such as the UART just as you would treat the data memory.
 This means that you should assert the equivalent write enable (i.e. valid) and data signals at the end of the execute stage, and read in data during the memory stage.
-The CPU itself should not check the \verb|data_out_valid| and \verb|data_in_ready| signals; this check is handled in software.
-The CPU needs to drive \verb|data_out_ready| and \verb|data_in_valid| correctly.
+The CPU itself should not check the \verb|uart_rx_data_out_valid| and \verb|uart_tx_data_in_ready| signals; this check is handled in software.
+The CPU needs to drive \verb|uart_rx_data_out_ready| and \verb|uart_tx_data_in_valid| correctly.
 
 The cycle counter should be incremented every cycle, and the instruction counter should be incremented for every instruction that is committed (you should not count bubbles injected into the pipeline or instructions run during a branch mispredict).
 From these counts, the CPI of the processor can be determined for a given benchmark program.
@@ -422,8 +429,8 @@ A reasonable order in which to complete your testing is as follows:
 \begin{enumerate}
   \item Test that your modules work in isolation via Verilog testbenches
   \item Test the entire CPU one instruction at a time with hand-written assembly --- see \verb|assembly_testbench.v|
-  \item Test the CPU's memory mapped I/O --- see \verb|echo_testbench.v|
   \item Run the \verb|riscv-tests| ISA test suite
+  \item Test the CPU's memory mapped I/O --- see \verb|echo_testbench.v|
 \end{enumerate}
 
 \subsubsection{Integration Testing}
@@ -435,7 +442,8 @@ Once you have verified that all the instructions in the ISA are working correctl
 
 \subsection{Software Toolchain - Writing RISC-V Programs}
 \label{toolchain}
-A GCC RISC-V toolchain has been built and installed in the eecs151 home directory; these binaries will run on any of the c125m machines in the 125 Cory lab.
+A GCC RISC-V toolchain has been built and installed in the eecs151 home directory; these binaries will run on any of the c125m machines in the 125 Cory lab. The \href{https://berkeley.box.com/s/s4z0ykpf0tudrm9hce8fsmitpgb2khhe}{VM Image} also has the toolchain installed along with Vivado 2019.1.
+
 The most relevant programs in the toolchain are:
 \begin{itemize}
     \item \verb|riscv64-unknown-elf-gcc|: GCC for RISC-V, compiles C code to RISC-V binaries.
@@ -487,7 +495,7 @@ If the testbench times out it means \verb|x20| never became 1, so the processor 
 
 You should add your own tests to verify that your processor can execute different instructions correctly. Modify the file \verb|start.s| to add your assembly code, then rerun the RTL simulation.
 
-\subsection{RISC-V ISA Tests}
+\subsection{RISC-V ISA Tests}\label{riscv-isa-tests}
 You will need the CSR instructions to work before you can use this test suite, and you should have confidence in your hand-written assembly tests.
 Test the CSR instructions using hand assembly tests.
 
@@ -497,27 +505,34 @@ git pull staff master
 git submodule update --init --recursive
 \end{minted}
 
-Modify line 4 of \verb|sim/isa_testbench.v| to point to the tohost CSR register in your CPU.
-Then run:
+Then run
 
 \begin{minted}{bash}
-cd software/riscv-isa-tests
-make
 cd hardware
-make isa-tests
+make sim tb=isa_testbench
 \end{minted}
 
-The output of each test (a .log file and a .fst waveform) is stored in \verb|hardware/sim/isa|.
-To re-run a particular ISA test (e.g. \verb|add|) run \verb|make sim/isa/add.fst|.
+To run a particular ISA test (e.g. \verb|add|) run \verb|make sim tb=isa_testbench test=add|. The simulation should print out which tests passed or failed and their simulation cycles.
 
-To check what tests passed run \texttt{cat sim/isa/*.log | grep -i pass}.
-To check for failures run \texttt{cat sim/isa/*.log | grep -i fail}.
+%To check what tests passed run \texttt{cat sim/isa/*.log | grep -i pass}.
+%To check for failures run \texttt{cat sim/isa/*.log | grep -i fail}.
 
-You can expect the \verb|fence_i| test to fail, but the rest should pass.
 If you're failing other tests, debug using the test assembly file in\\\verb|software/riscv-isa-tests/riscv-tests/isa/rv32ui| or the generated assembly dump.
 
 The \verb|RESET_PC| parameter is used in \verb|isa_testbench| to start the test in the IMEM instead of the BIOS.
 Make sure you have used it in \verb|Riscv151.v|.
+
+\subsection{Echo Test}
+
+You should have your UART modules integrated with the CPU before running this test. The test verifies if your CPU is able to: check the UART status, read a character from UART Receiver, and write a character to UART Transmitter. Take a look at the software code \verb|software/echo/echo.c| to see what it does. The testbench loads the MIF file compiled from the software code, and load it to the BIOS memory in a similar manner to the assembly test and riscv-isa tests.
+
+To run the echo test, run
+
+\begin{minted}{bash}
+make sim tb=echo_testbench
+\end{minted}
+
+The testbench, acts like a host, sends multiple characters via the serial line, then waits until it receives all the characters back. It is similar to how we test the UART Receiver and UART Transmitter module in Lab 6, but this time we test both of them along with your RISC-V CPU.
 
 \subsection{BIOS and Programming your CPU}
 \label{bios_info}
@@ -531,7 +546,7 @@ To run the BIOS:
   \item Verify that the stack pointer and .text segment offset are set properly in \verb|start.s| and \verb|bios151v3.ld|
   \item Compile the program with \verb|make| in the \verb|software/bios151v3| directory
   \item Verify the \verb|bios_mem.v| module is initialized with the BIOS hex file
-  \item Build a bitstream and program the FPGA
+  \item Build a bitstream and program the FPGA. Run \verb|make write-bitstream| in \verb|hardware|
   \item Use screen to access the serial port:
     \begin{minted}[tabsize=2]{bash}
     screen $SERIALTTY 115200
