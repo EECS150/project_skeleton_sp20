@@ -14,15 +14,27 @@ int8_t* read_n(int8_t*b, uint32_t n)
 
 int8_t* read_token(int8_t* b, uint32_t n, int8_t* ds)
 {
-    for (uint32_t i = 0; i < n; i++) {
+    uint32_t i = 0;
+    while (i < n) {
         int8_t ch = uread_int8();
-        for (uint32_t j = 0; ds[j] != '\0'; j++) {
-            if (ch == ds[j]) {
+        if (ch == '\x08') {
+            if (i == 0)
+                uwrite_int8('\x20');
+            else {
                 b[i] = '\0';
-                return b;
+                i = i - 1;
+                uwrite_int8s("\x20\x08");
             }
+        } else {
+            for (uint32_t j = 0; ds[j] != '\0'; j++) {
+                if (ch == ds[j]) {
+                    b[i] = '\0';
+                    return b;
+                }
+            }
+            b[i] = ch;
+            i = i + 1;
         }
-        b[i] = ch;
     }
     b[n - 1] = '\0';
     return b;
