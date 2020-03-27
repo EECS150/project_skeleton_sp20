@@ -15,7 +15,8 @@ module assembly_testbench();
         .clk(clk),
         .rst(rst),
         .FPGA_SERIAL_RX(),
-        .FPGA_SERIAL_TX()
+        .FPGA_SERIAL_TX(),
+        .csr()
     );
 
     // A task to check if the value contained in a register equals an expected value
