@@ -34,7 +34,6 @@ $(TARGET).elf: $(SOURCES)
 	$(RISCV)-strip -R .comment -R .note.gnu.build-id $@
 	$(RISCV)-objcopy $(basename $@).elf -O binary $(basename $@).bin
 	$(RISCV)-bin2hex -w 32 $(basename $@).bin $(basename $@).mif
-	sed -i '1i 00000000' $(basename $@).mif
 
 clean:
 	rm -f *.elf *.dump *.mif *.bin

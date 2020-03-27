@@ -19,8 +19,7 @@ all: $(TESTS_HEX)
 	$(RISCV)-gcc $(GCC_OPTS) -Ienv_151 -Iriscv-tests/env -Iriscv-tests/isa/macros/scalar $^ -o $(basename $(notdir $^)).elf
 	$(RISCV)-objdump -D -Mnumeric $(basename $(notdir $^)).elf > $(basename $@).dump
 	$(RISCV)-objcopy $(basename $@).elf -O binary $(basename $@).bin
-	$(RISCV)-bin2hex -w 32 $(basename $@).bin $(basename $@).hex
-	sed -i '1i @0' $(basename $@).hex
+	$(RISCV)-bin2hex -w 32 $(basename $@).bin $(basename $@).mif
 
 clean:
-	rm -f *.elf *.bin *.hex *.dump
+	rm -f *.elf *.bin *.mif *.dump
