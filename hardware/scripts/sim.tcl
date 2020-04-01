@@ -22,10 +22,10 @@ update_compile_order -fileset sources_1
 # Add simulation file
 add_files -fileset sim_1 -norecurse sim/${testbench_name}.v
 # Add memory initialization file
-if {[info exists ${sw}]} {
-  add_files -norecurse [glob ../software/${sw}/*.mif]
-} else {
+if {[string match "" ${sw}]} {
   set test_name ${testbench_name}
+} else {
+  add_files -norecurse [glob ../software/${sw}/*.mif]
 }
 
 set_property top ${testbench_name} [get_filesets sim_1]

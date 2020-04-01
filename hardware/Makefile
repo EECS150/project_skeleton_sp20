@@ -20,19 +20,25 @@ sw = riscv-isa-tests
 test = all
 endif
 
-$(sw):
+BIOS_MIF := ../software/bios151v3/bios151v3.mif
+SW_MIF   := ../software/$(sw)/*.mif
+
+$(BIOS_MIF):
 		cd ../software/bios151v3 && make > /dev/null
+
+$(SW_MIF):
 		cd ../software/$(sw) && make > /dev/null
 
-$(Z1TOP_XPR): $(VERILOG_SRCS)
-		cd ../software/bios151v3 && make > /dev/null
+$(sw): $(SW_MIF)
+
+$(Z1TOP_XPR): $(VERILOG_SRCS) $(BIOS_MIF)
 		vivado -mode batch -source scripts/build_project.tcl
 
 .PHONY: build-project
 build-project: $(Z1TOP_XPR)
 
 .PHONY: sim
-sim: $(sw)
+sim: $(sw) $(BIOS_MIF)
 		vivado -mode batch -source scripts/sim.tcl -tclargs $(tb) $(sw) $(test)
 
 .PHONY: write-bitstream
