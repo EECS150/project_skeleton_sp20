@@ -8,10 +8,10 @@ Z1TOP_XPR := z1top_proj/z1top_proj.xpr
 tb := assembly_testbench
 
 ifeq ($(tb), assembly_testbench)
-sw = assembly_tests
+sw   = assembly_tests
 test = assembly_tests
 else ifeq ($(tb), echo_testbench)
-sw = echo
+sw   = echo
 test = echo
 else ifeq ($(tb), c_testbench)
 sw = c_test
@@ -19,6 +19,10 @@ else ifeq ($(tb), isa_testbench)
 sw = riscv-isa-tests
 test = all
 endif
+
+$(sw):
+		cd ../software/bios151v3 && make > /dev/null
+		cd ../software/$(sw) && make > /dev/null
 
 $(Z1TOP_XPR): $(VERILOG_SRCS)
 		cd ../software/bios151v3 && make > /dev/null
@@ -28,9 +32,7 @@ $(Z1TOP_XPR): $(VERILOG_SRCS)
 build-project: $(Z1TOP_XPR)
 
 .PHONY: sim
-sim:
-		cd ../software/bios151v3 && make > /dev/null
-		cd ../software/$(sw) && make > /dev/null
+sim: $(sw)
 		vivado -mode batch -source scripts/sim.tcl -tclargs $(tb) $(sw) $(test)
 
 .PHONY: write-bitstream
@@ -44,4 +46,4 @@ program-fpga:
 .PHONY: clean
 # "make clean" won't remove your project folders
 clean:
-		rm -rf *.log *.jou *.str
+		rm -rf *.log *.jou *.str vcd_files
