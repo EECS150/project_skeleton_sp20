@@ -88,9 +88,9 @@ The following is a brief description of each checkpoint and approximately how ma
 
 \begin{itemize}
   \item \textbf{\blockDiagramDueDate \space - \blockDiagramTaskName \space (\blockDiagramTimeAlloted)} - Submit a report to Gradescope with the following items: a schematic of your processor's datapath and pipeline stages, and your answers to the checkpoint 1 questions. The TA will give you feedback if applicable. In addition, push all of your IO-circuit Verilog modules that you have implemented in the labs to your assigned Github repository: \verb|debouncer|, \verb|edge_detector|, \verb|synchronizer|, \verb|fifo|, \verb|uart_receiver|, \verb|uart_transmitter|.
-  \item \textbf{\ALUDueDate \space - \ALUTaskName \space (\ALUTimeAlloted)} - Go over your RISC-V microarchitecture with the TA (via Zoom). You should have a working ALU module and a complete instructional decoder by this point, and some basic datapath and control logic. This is mainly for the TA to keep track of your current progress.
+  \item \textbf{\ALUDueDate \space - \ALUTaskName \space (\ALUTimeAlloted)} - You should have a working Riscv151 core that can decode and execute all RV32I instructions, including CSR. It is not required that your implementation is high-performance nor integrated with the UART modules.
   \item \textbf{\baseCPUDueDate \space - \baseCPUTaskName \space (\baseCPUTimeAlloted)} - Implement a fully functional RISC-V processor core in Verilog. Your processor core should pass the assembly tests.
-  \item \textbf{\imageDueDate \space - \imageTaskName \space (\imageTimeAlloted)} - Attach I/O components from lab to your processor (FIFOs, buttons, switches, display), and \textbf{TBA}.
+  \item \textbf{\imageDueDate \space - \imageTaskName \space (\imageTimeAlloted)} - Attach I/O components from lab to your processor (FIFOs, buttons, switches), and \textbf{TBA}.
   \item \textbf{\finalCheckoffDueDate \space - Final Checkoff + Demo} - Final processor optimization and checkoff
   \item \textbf{\finalReportDueDate \space - Project Report} - Final report due
 \end{itemize}
@@ -182,7 +182,8 @@ We suggest you keep these with the provided source files in \verb|hardware/src| 
         \end{itemize}
       \item \texttt{sim}
         \begin{itemize}
-          \item \verb|assembly_testbench.v|: Starting point for testing your CPU. Works with the software in \texttt{software/assembly\_tests}.
+          \item \verb|Riscv151_testbench.v|: Starting point for testing your CPU. The testbench checks if your CPU can execute the instruction correctly according to spec, and can handle several cases of hazards. You should make sure your CPU implementation pass this testbench before moving on.
+          \item \verb|assembly_testbench.v|: The testbench works with the software in \texttt{software/assembly\_tests}.
           \item \verb|echo_testbench.v|: The testbench works with the software in \texttt{software/echo}. The CPU reads a character sent from the serial rx line and echoes it back to the serial tx line.
           \item \verb|isa_testbench.v|: The testbench works with the RISC-V ISA test suite in
 
@@ -428,6 +429,7 @@ A reasonable order in which to complete your testing is as follows:
 
 \begin{enumerate}
   \item Test that your modules work in isolation via Verilog testbenches
+  \item Test that your Riscv151 work with the \verb|Riscv151_testbench.v|
   \item Test the entire CPU one instruction at a time with hand-written assembly --- see \verb|assembly_testbench.v|
   \item Run the \verb|riscv-tests| ISA test suite
   \item Test the CPU's memory mapped I/O --- see \verb|echo_testbench.v|
@@ -467,6 +469,13 @@ There are several files:
     \item \verb|c_example.elf|: Binary produced after running \verb|make|.\\Use \verb|riscv64-unknown-elf-objdump -Mnumeric -D c_example.elf| to view the assembly code.
     \item \verb|c_example.dump|: Assembly dump of the binary.
 \end{itemize}
+
+\subsection{Riscv151 Tests}
+
+To run the test, use the following command:\\
+\verb|make sim tb=Riscv151_testbench|
+
+The testbench covers all RV32I instructions. To pass this testbench, you should have a working Riscv151 implementation that can decode and execute all the instructions in the spec, including CSR instructions. Several hazard cases are also tested. The testbench does not work with any software code as in the following sections, but rather it manually initializes the instructions and data in the memory blocks for each test.
 
 \subsection{Assembly Tests}
 \label{assembly_tests}
@@ -719,8 +728,8 @@ label: addi x2, x1, 4
 
 Commit your block diagram and your report to your team repository under \verb|sp20_teamXX/docs| by \blockDiagramDueDate. Please also remember to push your working IO circuits to your Github repository. The TA will also provide feedback for your block diagram proposal if applicable.
 
-\subsubsection{\ALUTaskName: Revised RISC-V microarchitecture, Basic Datapath + Control}
-This checkpoint is for TA to keep track of your current progress, and to ensure that your implementation is on the right track. The TA will go over your design with you. You are expected to have a fully-functioning ALU module and a complete Instructional Decoder. Although highly encouraged, it is not required to pass any assembly test for this checkpoint.
+\subsubsection{\ALUTaskName: Riscv151 Test}
+This checkpoint is for TA to keep track of your current progress, and to ensure that your implementation is on the right track. You are expected to have a fully-functioning Riscv151 core without IO blocks that passes the \verb|Riscv151_testbench.v|. You will also need to run Synthesis and Implementation to get the reports of area utilization and timing information of your design. This early-stage evaluation will give you some insight on how to further optimize your design to meet the spec requirement in future checkpoints. Although highly encouraged, it is not required to pass any software-related tests for this checkpoint, such as assembly tests or RISC-V test suite or echo. It is also not mandatory that you meet the target clock frequency at this checkpoint (50 MHz). The UART integration is also not required.
 
 \subsubsection{\baseCPUTaskName: Base RISCV151 System}
 This checkpoint requires a fully functioning three stage RISC-V CPU as described in this specification.
@@ -736,7 +745,7 @@ Checkoff will consist of a demonstration of the BIOS functionality, loading a pr
     \midrule
     Block Diagram, RISC-V ISA Questions, IO code & \blockDiagramDueDate & Push your block diagram, your writeup, and IO code to your Github repository.\\
     \midrule
-    Revised Block Diagram, Working ALU, Instructional Decoder, Basic datapath and control & \ALUDueDate \linebreak Check in code to Github & Check in your code to Github. Go over your RISC-V microarchitecture with TA\\
+    Riscv151 testbench & \ALUDueDate \linebreak Check in code to Github & Pass the Riscv151 testbench. Submit the area and timing report of your design.\\
     \midrule
     RISC-V CPU & \baseCPUDueDate \linebreak Check in code to Github & Demonstrate that the BIOS works, you can use \verb|hex_to_serial| to load the \verb|echo| program, \verb|jal| to it from the BIOS, and have that program successfully execute. Load the mmult program with \verb|hex_to_serial|, \verb|jal| to it, and have it execute successfully and return the benchmarking results and correct checksum. Your CPI should be under 1.2\\
     \bottomrule
