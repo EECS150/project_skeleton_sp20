@@ -310,10 +310,10 @@ module Riscv151_testbench();
         check_result_rf(5'd13,  32'h0000dead, "I-Type LHU 2");
         check_result_rf(5'd14,  32'h0000dead, "I-Type LHU 3");
 
-        check_result_rf(5'd15,  32'h000000ef, "I-Type LHU 0");
-        check_result_rf(5'd16,  32'h000000be, "I-Type LHU 1");
-        check_result_rf(5'd17,  32'h000000ad, "I-Type LHU 2");
-        check_result_rf(5'd18,  32'h000000de, "I-Type LHU 3");
+        check_result_rf(5'd15,  32'h000000ef, "I-Type LBU 0");
+        check_result_rf(5'd16,  32'h000000be, "I-Type LBU 1");
+        check_result_rf(5'd17,  32'h000000ad, "I-Type LBU 2");
+        check_result_rf(5'd18,  32'h000000de, "I-Type LBU 3");
 
         // Test S-Type Insts --------------------------------------------------
         // - SW, SH, SB
