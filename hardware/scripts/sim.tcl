@@ -22,7 +22,11 @@ update_compile_order -fileset sources_1
 # Add simulation file
 add_files -fileset sim_1 -norecurse sim/${testbench_name}.v
 # Add memory initialization file
-add_files -norecurse [glob ../software/${sw}/*.mif]
+if {[info exists ${sw}]} {
+  add_files -norecurse [glob ../software/${sw}/*.mif]
+} else {
+  set test_name ${testbench_name}
+}
 
 set_property top ${testbench_name} [get_filesets sim_1]
 update_compile_order -fileset sim_1
@@ -35,54 +39,61 @@ launch_simulation -step elaborate
 if {[string match "isa_testbench" ${testbench_name}] && [string match "all" $test_name]} {
   set tests [list ]
   # Full ISA test suit (except fence_i)
-  lappend tests addi.mif
-  lappend tests add.mif
-  lappend tests andi.mif
-  lappend tests and.mif
-  lappend tests auipc.mif
-  lappend tests beq.mif
-  lappend tests bge.mif
-  lappend tests bgeu.mif
-  lappend tests blt.mif
-  lappend tests bltu.mif
-  lappend tests bne.mif
-  lappend tests jal.mif
-  lappend tests jalr.mif
-  lappend tests lb.mif
-  lappend tests lbu.mif
-  lappend tests lh.mif
-  lappend tests lhu.mif
-  lappend tests lui.mif
-  lappend tests lw.mif
-  lappend tests ori.mif
-  lappend tests or.mif
-  lappend tests sb.mif
-  lappend tests sh.mif
-  lappend tests simple.mif
-  lappend tests slli.mif
-  lappend tests sll.mif
-  lappend tests slti.mif
-  lappend tests sltiu.mif
-  lappend tests slt.mif
-  lappend tests sltu.mif
-  lappend tests srai.mif
-  lappend tests sra.mif
-  lappend tests srli.mif
-  lappend tests srl.mif
-  lappend tests sub.mif
-  lappend tests sw.mif
-  lappend tests xori.mif
-  lappend tests xor.mif
+  lappend tests addi
+  lappend tests add
+  lappend tests andi
+  lappend tests and
+  lappend tests auipc
+  lappend tests beq
+  lappend tests bge
+  lappend tests bgeu
+  lappend tests blt
+  lappend tests bltu
+  lappend tests bne
+  lappend tests jal
+  lappend tests jalr
+  lappend tests lb
+  lappend tests lbu
+  lappend tests lh
+  lappend tests lhu
+  lappend tests lui
+  lappend tests lw
+  lappend tests ori
+  lappend tests or
+  lappend tests sb
+  lappend tests sh
+  lappend tests simple
+  lappend tests slli
+  lappend tests sll
+  lappend tests slti
+  lappend tests sltiu
+  lappend tests slt
+  lappend tests sltu
+  lappend tests srai
+  lappend tests sra
+  lappend tests srli
+  lappend tests srl
+  lappend tests sub
+  lappend tests sw
+  lappend tests xori
+  lappend tests xor
 } else {
-  set tests [list ${test_name}.mif ]
+  set tests [list ${test_name} ]
 }
 
 set num_tests [llength $tests]
 
+file mkdir vcd_files
+set current_dir [pwd]
 cd ${project_name}_proj/${project_name}_proj.sim/sim_1/behav/xsim
+
 for {set i 0} {$i < $num_tests} {incr i} {
-  xsim ${testbench_name}_behav -testplusarg MIF_FILE=[lindex $tests $i]
+  xsim ${testbench_name}_behav -testplusarg MIF_FILE=[lindex $tests $i].mif
+  open_vcd [lindex $tests $i].vcd
+  log_vcd /${testbench_name}/*
   run all
+  close_vcd
+  file copy -force [lindex $tests $i].vcd $current_dir/vcd_files
 }
 
 exit
