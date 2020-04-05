@@ -530,7 +530,7 @@ module Riscv151_testbench();
         INST_ADDR = 14'h0000;
 
         CPU.imem.mem[INST_ADDR + 0]   = {12'h51e, 5'd1, 3'b001, 5'd0, `OPC_CSR};
-        CPU.imem.mem[INST_ADDR + 1]   = {12'h51e, IMM,  3'b101, 5'd0, `OPC_CSR};
+        CPU.imem.mem[INST_ADDR + 1]   = {12'h51e, IMM[4:0],  3'b101, 5'd0, `OPC_CSR};
 
         current_test_id = current_test_id + 1;
         done = 0;
