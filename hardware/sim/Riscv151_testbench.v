@@ -429,9 +429,9 @@ module Riscv151_testbench();
         CPU.rf.mem[3] = 300;
         CPU.rf.mem[4] = 400;
 
-        IMM       = 32'h0000_0FF0;
+        IMM       = 32'hFFFF_FFF0;
         INST_ADDR = 14'h0000;
-        JUMP_ADDR = (CPU.rf.mem[1] + IMM[11:0]) >> 2;
+        JUMP_ADDR = (CPU.rf.mem[1] + IMM) >> 2;
 
         CPU.imem.mem[INST_ADDR + 0]   = {IMM[11:0],          5'd1, 3'b000, 5'd5, `OPC_JALR};
         CPU.imem.mem[INST_ADDR + 1]   = {`FNC7_0, 5'd2, 5'd1, `FNC_ADD_SUB, 5'd6, `OPC_ARI_RTYPE};
