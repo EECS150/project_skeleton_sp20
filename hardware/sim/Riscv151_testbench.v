@@ -125,7 +125,7 @@ module Riscv151_testbench();
             current_test_id   = current_test_id + 1;
             current_test_type = test_type;
             current_result    = result;
-            while (CPU.rf.mem[rf_wa] != result) begin
+            while (CPU.rf.mem[rf_wa] !== result) begin
                 current_output = CPU.rf.mem[rf_wa];
                 @(posedge clk);
             end
@@ -146,7 +146,7 @@ module Riscv151_testbench();
             current_test_id   = current_test_id + 1;
             current_test_type = test_type;
             current_result    = result;
-            while (CPU.dmem.mem[addr] != result) begin
+            while (CPU.dmem.mem[addr] !== result) begin
                 current_output = CPU.dmem.mem[addr];
                 @(posedge clk);
             end
