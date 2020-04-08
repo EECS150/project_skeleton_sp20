@@ -435,12 +435,12 @@ A reasonable order in which to complete your testing is as follows:
   \item Test the CPU's memory mapped I/O --- see \verb|echo_testbench.v|
 \end{enumerate}
 
-\subsubsection{Integration Testing}
-Once you are confident that the individual components of your processor are working in isolation, you will want to test the entire processor as a whole. The easiest way to do this is to write an assembly program that tests all of the instructions in your ISA.
-A skeleton is provided for you in \verb|software/assembly_tests|.
-See Section \ref{assembly_tests} for details.
+\subsection{Riscv151 Tests}
 
-Once you have verified that all the instructions in the ISA are working correctly, you may also want to verify that the memory mapped I/O and instruction/data memory reading/writing work with a similar assembly program.
+Once you are confident that the individual components of your processor are working in isolation, you will want to test the entire processor as a whole. One way to do this is to pass the \verb|Riscv151_testbench|. To run the test, use the following command:\\
+\verb|make sim tb=Riscv151_testbench|
+
+The testbench covers all RV32I instructions. To pass this testbench, you should have a working Riscv151 implementation that can decode and execute all the instructions in the spec, including CSR instructions. Several hazard cases are also tested. The testbench does not work with any software code as in the following sections, but rather it manually initializes the instructions and data in the memory blocks for each test. The testbench does not cover reading from BIOS memory nor memory mapped IO. You will need to complete these compoenents before moving on with other testbenches.
 
 \subsection{Software Toolchain - Writing RISC-V Programs}
 \label{toolchain}
@@ -469,13 +469,6 @@ There are several files:
     \item \verb|c_example.elf|: Binary produced after running \verb|make|.\\Use \verb|riscv64-unknown-elf-objdump -Mnumeric -D c_example.elf| to view the assembly code.
     \item \verb|c_example.dump|: Assembly dump of the binary.
 \end{itemize}
-
-\subsection{Riscv151 Tests}
-
-To run the test, use the following command:\\
-\verb|make sim tb=Riscv151_testbench|
-
-The testbench covers all RV32I instructions. To pass this testbench, you should have a working Riscv151 implementation that can decode and execute all the instructions in the spec, including CSR instructions. Several hazard cases are also tested. The testbench does not work with any software code as in the following sections, but rather it manually initializes the instructions and data in the memory blocks for each test.
 
 \subsection{Assembly Tests}
 \label{assembly_tests}
@@ -552,9 +545,7 @@ For detailed information on the BIOS, see Appendix \ref{sec:biosinfo}.
 
 To run the BIOS:
 \begin{enumerate}
-  \item Verify that the stack pointer and .text segment offset are set properly in \verb|start.s| and \verb|bios151v3.ld|
-  \item Compile the program with \verb|make| in the \verb|software/bios151v3| directory
-  \item Verify the \verb|bios_mem.v| module is initialized with the BIOS hex file
+  \item Verify that the stack pointer and .text segment offset are set properly in \verb|start.s| and \verb|bios151v3.ld| in software/bios151v3 directory
   \item Build a bitstream and program the FPGA. Run \verb|make write-bitstream| in \verb|hardware|
   \item Use screen to access the serial port:
     \begin{minted}[tabsize=2]{bash}
@@ -618,7 +609,7 @@ It should be set to the base of DMEM: \verb|0x10000000|.
 
 The program will also output the values of your instruction and cycle counters (in hex).
 These can be used to calculate the CPI for this program.
-Your target CPI should be under 1.2.
+Your target CPI should not be greater than 1.2.
 If your CPI exceeds this value, you will need to modify your datapath and pipeline to reduce the number of bubbles inserted for resolving control hazards (since they are the only source of extra latency in our processor).
 This might involve performing naive branch prediction or moving the jalr address calculation to an earlier stage.
 
@@ -639,7 +630,7 @@ It might seem overwhelming to implement all the functionality that your processo
 
 \begin{enumerate}
   \item \textit{Design.} You should start with a comprehensive and detailed design/schematic. Enumerate all the control signals that you will need. Be careful when designing the memory fetch stage since all the memories we use (BIOS, instruction, data, IO) are synchronous.
-  \item \textit{First steps.} Implementing some modules that are easy to write and test. Write the \verb|reg_file.v| module. Create a Verilog testbench and test the cases in Section \ref{reg_file}.
+  \item \textit{First steps.} Implementing some modules that are easy to write and test.
   \item \textit{Control Unit + other small modules.} Implement the control unit, ALU, and any other small independent modules. Unit test them.
   \item \textit{Memory.} In the beginning, only use the BIOS memory in the instruction fetch stage and only use the data memory in the memory stage. This is enough to run assembly tests.
   \item \textit{Connect stages and pipeline.} Connect your modules together and pipeline them. At this point, you should be able to run integration tests using assembly tests for most R and I type instructions.
@@ -647,11 +638,12 @@ It might seem overwhelming to implement all the functionality that your processo
   \item \textit{Implement data forwarding for data hazards.} Add forwarding muxes and forward the outputs of the ALU and memory stage. Remember that you might have to forward to ALU input A, ALU input B, and data to write to memory. Test forwarding aggressively; most of your bugs will come from incomplete or faulty forwarding logic. Test forwarding from memory and from the ALU, and with control instructions.
   \item \textit{Add BIOS memory reads.} Add the BIOS memory block RAM to the memory stage to be able to load data from the BIOS memory. Write assembly tests that contain some static data stored in the BIOS memory and verify that you can read that data.
   \item \textit{Add Inst memory writes and reads.} Add the instruction memory block RAM to the memory stage to be able to write data to it when executing inside the BIOS memory. Also add the instruction memory block RAM to the instruction fetch stage to be able to read instructions from the inst memory. Write tests that first write instructions to the instruction memory, and then jump (using jalr) to instruction memory to see that the right instructions are executed.
+  \item \textit{Run Riscv151\_testbench}. The testbench verifies if your Riscv151 is able to read instructons from instruction memory block RAM, execute, and write data to either the Register File or data memory block RAM.
   \item \textit{Add cycle counters.} Begin to add the memory mapped IO components, by first adding the cycle and instruction counters. These are just 2 32-bit registers that your CPU should update on every cycle and every instruction respectively. Write tests to verify that your counters can be reset with a \verb|sw| instruction, and can be read from using a \verb|lw| instruction.
   \item \textit{Integrate UART.} Add the UART to the memory stage, in parallel with the data, instruction, and BIOS memories. Detect when an instruction is accessing the UART and route the data to the UART accordingly. Make sure that you are setting the UART ready/valid control signals properly as you are feeding or retrieving data from it. We have provided you with the \verb|echo_testbench| which performs a test of the UART.
   \item \textit{Run the BIOS.} If everything so far has gone well, program the FPGA. Verify that the BIOS performs as expected. As a precursor to this step, you might try to build a bitstream with the BIOS memory initialized with the echo program.
   \item \textit{Run matrix multiply.} Load the \verb|mmult| program with the \verb|hex_to_serial| utility, and run \verb|mmult| on the FPGA. Verify that it returns the correct checksum.
-  \item \textit{Check CPI.} Compute the CPI when running the \verb|mmult| program. If you achieve a CPI below 1.2, that is acceptable, but if your CPI is larger than that, you should think of ways to reduce it.
+  \item \textit{Check CPI.} Compute the CPI when running the \verb|mmult| program. If you achieve a CPI 1.2 or smaller, that is acceptable, but if your CPI is larger than that, you should think of ways to reduce it.
 \end{enumerate}
 
 \subsection{Checkoff}
@@ -747,7 +739,7 @@ Checkoff will consist of a demonstration of the BIOS functionality, loading a pr
     \midrule
     Riscv151 testbench & \ALUDueDate \linebreak Check in code to Github & Pass the Riscv151 testbench. Submit the area and timing report of your design.\\
     \midrule
-    RISC-V CPU & \baseCPUDueDate \linebreak Check in code to Github & Demonstrate that the BIOS works, you can use \verb|hex_to_serial| to load the \verb|echo| program, \verb|jal| to it from the BIOS, and have that program successfully execute. Load the mmult program with \verb|hex_to_serial|, \verb|jal| to it, and have it execute successfully and return the benchmarking results and correct checksum. Your CPI should be under 1.2\\
+    RISC-V CPU & \baseCPUDueDate \linebreak Check in code to Github & Demonstrate that the BIOS works, you can use \verb|hex_to_serial| to load the \verb|echo| program, \verb|jal| to it from the BIOS, and have that program successfully execute. Load the mmult program with \verb|hex_to_serial|, \verb|jal| to it, and have it execute successfully and return the benchmarking results and correct checksum. Your CPI should not be greater than 1.2\\
     \bottomrule
   \end{tabular}
 \end{center}
