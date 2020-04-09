@@ -569,15 +569,15 @@ Please also pay attention that writes to the instruction memory (\verb|sw ffffff
 
 In addition to the command interface, the BIOS allows you to load programs to the CPU. \textit{With screen closed}, run:
 \begin{minted}[tabsize=2]{bash}
-    hex_to_serial <hex_file> <address>
+    hex_to_serial <mif_file> <address>
 \end{minted}
 
-This stores the \verb|.hex| file at the specified hex address.
-In order to write into both the data and instruction memories, \textbf{remember to set the top nibble to 0x3} (i.e. \verb|hex_to_serial echo.hex 30000000|, assuming the \verb|.ld| file sets the base address to \verb|0x10000000|).
+This stores the \verb|.mif| file at the specified hex address.
+In order to write into both the data and instruction memories, \textbf{remember to set the top nibble to 0x3} (i.e. \verb|hex_to_serial echo.mif 30000000|, assuming the \verb|.ld| file sets the base address to \verb|0x10000000|).
 
 You also need to ensure that the stack and base address are set properly (See Section \ref{toolchain}).
 For example, before making the \verb|mmult| program you should set the set the base address to \verb|0x10000000| (see \ref{mmult}).
-Therefore, when loading the \verb|mmult| program you should load it at the base address: \verb|hex_to_serial mmult.hex 30000000|.
+Therefore, when loading the \verb|mmult| program you should load it at the base address: \verb|hex_to_serial mmult.mif 30000000|.
 Then, you can jump to the loaded \verb|mmult| program in in your screen session by using \verb|jal 10000000|.
 
 \subsection{Target Clock Frequency}
