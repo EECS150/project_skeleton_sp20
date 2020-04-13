@@ -72,6 +72,16 @@ module REGISTER_R_CE(q, d, rst, ce, clk);
      else if (ce) q <= d;
 endmodule // REGISTER_R_CE
 
+// Register of D-Type Flip-flops with IOB attribute
+module REGISTER_IOB (q, d, clk);
+   parameter N = 1;
+   (* IOB = "true" *) output reg [N-1:0] q;
+   input [N-1:0]      d;
+   input 	     clk;
+   initial q = {N{1'b0}};
+   always @(posedge clk)
+    q <= d;
+endmodule // REGISTER_IOB
 
 /* 
  Memory Blocks.  These will simulate correctly and synthesize

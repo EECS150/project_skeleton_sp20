@@ -50,16 +50,19 @@ module z1top (
     wire reset = (buttons_pressed[0] & SWITCHES[1]);
     wire [31:0] csr;
 
+    wire cpu_tx, cpu_rx;
     Riscv151 #(
         .CPU_CLOCK_FREQ(CPU_CLOCK_FREQ)
     ) cpu (
         .clk(cpu_clk),
         .rst(reset),
-        .FPGA_SERIAL_TX(FPGA_SERIAL_TX),
-        .FPGA_SERIAL_RX(FPGA_SERIAL_RX),
+        .FPGA_SERIAL_TX(cpu_tx),
+        .FPGA_SERIAL_RX(cpu_rx),
         .csr(csr)
     );
 
     assign LEDS[5:0] = csr[5:0];
 
+    REGISTER_IOB #(.N(1)) cpu_tx_reg (.q(FPGA_SERIAL_TX), .d(cpu_tx), .clk(cpu_clk));
+    REGISTER_IOB #(.N(1)) cpu_rx_reg (.q(cpu_rx), .d(FPGA_SERIAL_RX), .clk(cpu_clk));
 endmodule
