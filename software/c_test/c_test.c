@@ -34,7 +34,7 @@ int8_t* read_token(int8_t* b, uint32_t n, int8_t* ds)
 #define BUFFER_LEN 16
 int main(void) {
     csr_tohost(0);
-    uwrite_int8s("151> ");
+    uwrite_int8s("\r\n151> ");
     int8_t buffer[BUFFER_LEN];
     int8_t* input = read_token(buffer, BUFFER_LEN, " \x0d");
     if (strcmp(input, "xyz") == 0) {
