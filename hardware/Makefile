@@ -22,11 +22,12 @@ endif
 
 BIOS_MIF := ../software/bios151v3/bios151v3.mif
 SW_MIF   := ../software/$(sw)/*.mif
+C_SRCS   := ../software/$(sw)/*.c
 
 $(BIOS_MIF):
 		cd ../software/bios151v3 && make > /dev/null
 
-$(SW_MIF):
+$(SW_MIF): $(C_SRCS)
 		cd ../software/$(sw) && make > /dev/null
 
 $(sw): $(SW_MIF)
