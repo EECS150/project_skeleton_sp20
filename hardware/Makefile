@@ -15,6 +15,8 @@ sw   = echo
 test = echo
 else ifeq ($(tb), c_testbench)
 sw = c_test
+else ifeq ($(tb), strcmp_testbench)
+sw = strcmp
 else ifeq ($(tb), isa_testbench)
 sw = riscv-isa-tests
 test = all
