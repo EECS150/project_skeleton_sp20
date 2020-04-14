@@ -169,8 +169,8 @@ module bios_testbench();
             @(posedge clk);
         end
 
-        // Timeout in 200000 cycles
-        for (cycle = 0; cycle < 200000; cycle = cycle + 1) begin
+        // Timeout in 500000 cycles
+        for (cycle = 0; cycle < 500000; cycle = cycle + 1) begin
             if (!done) @(posedge clk);
         end
 
