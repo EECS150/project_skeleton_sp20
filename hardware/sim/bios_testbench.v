@@ -143,6 +143,19 @@ module bios_testbench();
                 fpga_to_host(8'h3a); // ':'
                 fpga_to_host(8'h20); // [space]
 
+                fpga_to_host(8'h61); // 'a'
+                fpga_to_host(8'h62); // 'b'
+                fpga_to_host(8'h63); // 'c'
+                fpga_to_host(8'h64); // 'd'
+
+                fpga_to_host(8'h0a); // \n
+                fpga_to_host(8'h0d); // \r
+                fpga_to_host(8'h31); // 1
+                fpga_to_host(8'h35); // 5
+                fpga_to_host(8'h31); // 1
+                fpga_to_host(8'h3e); // >
+                fpga_to_host(8'h20); // [space]
+
             end
         join
 
