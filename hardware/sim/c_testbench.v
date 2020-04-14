@@ -15,7 +15,7 @@ module c_testbench();
     wire [31:0] csr;
     Riscv151 # (
         .CPU_CLOCK_FREQ(CPU_CLOCK_FREQ),
-        .BIOS_MEM_HEX_FILE("c_test.mif")
+        .RESET_PC(32'h1000_0000)
     ) CPU (
         .clk(clk),
         .rst(rst),
@@ -78,7 +78,10 @@ module c_testbench();
     endtask
 
     initial begin
-        #0;
+        #1;
+        $readmemh("c_test.mif", CPU.imem.mem);
+        $readmemh("c_test.mif", CPU.dmem.mem);
+
         rst = 1;
         serial_in = 1;
 
@@ -92,7 +95,6 @@ module c_testbench();
 
         $display("[TEST 1] Expect to see: \\r\\n151> ");
 
-        // initial printout from BIOS program
         fpga_to_host(8'h0d); // \r
         fpga_to_host(8'h0a); // \n
         fpga_to_host(8'h31); // 1
@@ -118,19 +120,18 @@ module c_testbench();
             end
         join
 
-        // Wait until csr[0] is asserted
-        while (csr[0] !== 1'b1) begin
+        // Wait until csr is updated
+        while (csr === 0) begin
             @(posedge clk);
         end
         done = 1;
 
         if (csr[0] === 1'b1 && csr[31:1] === 31'd0) begin
-            $display("CSR test PASSED! Strings matched.");
+            $display("[%d sim. cycles] CSR test PASSED! Strings matched.", cycle);
         end else begin
-            $display("CSR test FAILED! Strings mismatched.");
+            $display("[%d sim. cycles] CSR test FAILED! Strings mismatched.", cycle);
         end
 
-        done = 1;
         #100;
         $finish();
     end
