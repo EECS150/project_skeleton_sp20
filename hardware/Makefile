@@ -24,7 +24,7 @@ endif
 
 BIOS_MIF := ../software/bios151v3/bios151v3.mif
 SW_MIF   := ../software/$(sw)/*.mif
-SW_SRCS  += $(wildcard ../software/$(sw)/*.h)
+SW_SRCS  := $(wildcard ../software/$(sw)/*.h)
 SW_SRCS  += $(wildcard ../software/$(sw)/*.c)
 SW_SRCS  += $(wildcard ../software/$(sw)/*.s)
 SW_SRCS  += $(wildcard ../software/$(sw)/*.ld)
@@ -32,7 +32,7 @@ SW_SRCS  += $(wildcard ../software/$(sw)/*.ld)
 $(BIOS_MIF):
 		cd ../software/bios151v3 && make > /dev/null
 
-$(SW_MIF): $(C_SRCS)
+$(SW_MIF): $(SW_SRCS)
 		cd ../software/$(sw) && make > /dev/null
 
 $(sw): $(SW_MIF)
