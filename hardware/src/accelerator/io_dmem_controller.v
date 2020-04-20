@@ -1,4 +1,5 @@
 
+// conv2D (IO) <-----> io_dmem_controller <-----> DMem (Riscv151)
 module io_dmem_controller #(
     parameter AWIDTH          = 32,
     parameter DWIDTH          = 32,
