@@ -4,30 +4,11 @@
 #define CYCLE_COUNTER (*((volatile uint32_t*)0x80000010))
 #define INSTRUCTION_COUNTER (*((volatile uint32_t*)0x80000014))
 
-#define GPIO_FIFO_EMPTY (*((volatile uint32_t*)0x80000020) & 0x01)
-#define GPIO_FIFO_DATA (*((volatile uint32_t*)0x80000024))
-#define SWITCHES (*((volatile uint32_t*)0x80000028) & 0x03)
-#define LED_CONTROL (*((volatile uint32_t*)0x80000030))
+#define CONV2D_START      (*((volatile uint32_t*) 0x80000040))
+#define CONV2D_IDLE       (*((volatile uint32_t*) 0x80000044) & 0x02)
+#define CONV2D_DONE       (*((volatile uint32_t*) 0x80000044) & 0x01)
 
-#define PWM_DUTY_CYCLE (*((volatile uint32_t*)0x80000034))
-#define PWM_REQ (*((volatile uint32_t*)0x80000038))
-#define PWM_ACK (*((volatile uint32_t*)0x80000040))
-
-/*
-#define TONE_GEN_OUTPUT_ENABLE (*((volatile uint32_t*)0x80000034))
-#define TONE_GEN_TONE_INPUT (*((volatile uint32_t*)0x80000038))
-
-#define I2S_FULL (*((volatile uint32_t*)0x80000040) & 0x01)
-#define I2S_DATA (*((volatile uint32_t*)0x80000044))
-
-// I2C Controller MMIO - reading
-#define I2C_CONTROLLER_READY (*((volatile uint32_t*)0x80000100) & 0x1)
-#define I2C_CONTROLLER_READ_DATA_VALID (*((volatile uint32_t*)0x80000100) & 0x2)
-#define I2C_READ_DATA (*((volatile uint32_t*)0x80000104) & 0xFFFF)
-
-// I2C Controller MMIO - writing
-#define I2C_REG_ADDR (*((volatile uint32_t*)0x80000108))
-#define I2C_WRITE_DATA (*((volatile uint32_t*)0x8000010C))
-#define I2C_SLAVE_ADDR (*((volatile uint32_t*)0x80000110))
-#define I2C_CONTROLLER_FIRE (*((volatile uint32_t*)0x80000114))
-*/
+#define CONV2D_FM_DIM     (*((volatile uint32_t*) 0x80000048))
+#define CONV2D_WT_OFFSET  (*((volatile uint32_t*) 0x8000004c))
+#define CONV2D_IFM_OFFSET (*((volatile uint32_t*) 0x80000050))
+#define CONV2D_OFM_OFFSET (*((volatile uint32_t*) 0x80000054))
