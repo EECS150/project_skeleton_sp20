@@ -1,4 +1,5 @@
 
+// conv2D compute unit
 module conv2D_compute #(
     parameter AWIDTH = 32,
     parameter DWIDTH = 32,
@@ -7,17 +8,23 @@ module conv2D_compute #(
     input clk,
     input rst,
 
+    // Control/status signals
     input start,
     output idle,
 
+    // Current OFM(y, x)
     input [31:0] x,
     input [31:0] y,
+
+    // Feature map dimension
     input [31:0] fm_dim,
 
+    // Read data from DMem
     input  [DWIDTH-1:0] rdata,
     input               rdata_valid,
     output              rdata_ready,
 
+    // Write data to mem_if
     output [DWIDTH-1:0] wdata,
     output              wdata_valid
 );
@@ -30,6 +37,7 @@ module conv2D_compute #(
     localparam STATE_COMPUTE = 2'b10;
     localparam STATE_DONE    = 2'b11;
 
+    // state register
     wire [1:0] state_q;
     reg  [1:0] state_d;
 
@@ -40,6 +48,9 @@ module conv2D_compute #(
         .clk(clk)
     );
 
+    // m and n index registers are used to iterate through the weight elements (WT_SIZE)
+
+    // m index register: 0 --> WT_DIM - 1
     wire [31:0] m_cnt_d, m_cnt_q;
     wire m_cnt_ce, m_cnt_rst;
 
@@ -51,6 +62,7 @@ module conv2D_compute #(
         .clk(clk)
     );
 
+    // n index register: 0 --> WT_DIM - 1
     wire [31:0] n_cnt_d, n_cnt_q;
     wire n_cnt_ce, n_cnt_rst;
 
@@ -62,6 +74,7 @@ module conv2D_compute #(
         .clk(clk)
     );
 
+    // shift registers for WT_SIZE elements of weight matrix
     wire [DWIDTH-1:0] wt_regs_q   [WT_SIZE-1:0];
     wire [DWIDTH-1:0] wt_regs_d   [WT_SIZE-1:0];
     wire              wt_regs_ce  [WT_SIZE-1:0];
@@ -80,6 +93,7 @@ module conv2D_compute #(
         end
     endgenerate
 
+    // accumulator to store the result
     wire [DWIDTH-1:0] acc_q, acc_d;
     wire              acc_ce, acc_rst;
     REGISTER_R_CE #(.N(DWIDTH), .INIT(0)) acc_reg (
@@ -92,24 +106,49 @@ module conv2D_compute #(
 
     wire rdata_fire = rdata_valid & rdata_ready;
 
+    // idx and idy are used to check for halo cells -- see the software implementation in conv2D_testbench for reference
     wire signed [31:0] idx = x - HALF_WT_DIM + n_cnt_q;
     wire signed [31:0] idy = y - HALF_WT_DIM + m_cnt_q;
     wire halo              = idx < 0 | idx >= fm_dim | idy < 0 | idy >= fm_dim;
     wire [31:0] d          = (halo) ? 0 : rdata;
 
+    // read logic
+    // We need to be careful of when to read/scan halo cells, when to read/scan real (data) IFM cells
     wire read_wt   = (state_q == STATE_READ_WT) & rdata_fire;
     wire read_halo = (state_q == STATE_COMPUTE) & halo;
     wire read_fm   = (state_q == STATE_COMPUTE) & rdata_fire;
     wire read_data = read_wt | read_halo | read_fm;
 
+    // (m, n) forms a nested loop. Be mindful of when to update each counter
+    // for (m = 0; m < WT_DIM; m = m + 1)
+    //  for (n = 0; n < WT_DIM; n = n + 1)
+
+    // n index update
     assign n_cnt_d   = n_cnt_q + 1;
     assign n_cnt_ce  = read_data;
     assign n_cnt_rst = (n_cnt_q == WT_DIM - 1 & read_data) | rst;
 
+    // m index update
     assign m_cnt_d   = m_cnt_q + 1;
     assign m_cnt_ce  = read_data & n_cnt_q == WT_DIM - 1;
     assign m_cnt_rst = (n_cnt_q == WT_DIM - 1 & m_cnt_q == WT_DIM - 1 & read_data) | rst;
 
+    // We fill the weight shift register with the weight data from DMem initially.
+    // When the computation phase begins, the shift register logic is enable to
+    // move the weights towards wts[0] each clock cycle. A register is used to
+    // accumulate the result of multiplying wts[0] with incoming IFM/halo cells.
+    // This structure uses only one MAC (multiplier-accumulation) unit, but consumes
+    // WT_SIZE cycles to compute the result
+    //
+    //
+    //    wts[0] <-- wts[1] <-- wts[2] <-- ... <-- wts[8]
+    //      |                                        ^
+    //      |________________________________________|
+    //      |
+    //      * ifm/halo
+    //      |
+    // acc += 
+ 
     generate
         for (i = 0; i < WT_SIZE; i = i + 1) begin
             if (i == WT_SIZE - 1)
@@ -135,14 +174,17 @@ module conv2D_compute #(
                 if (start)
                     state_d = STATE_READ_WT;
             end
+            // Load WT_DIM x WT_DIM weight elements from DMem
             STATE_READ_WT: begin
                 if (n_cnt_q == WT_DIM - 1 & m_cnt_q == WT_DIM - 1 & rdata_fire)
                     state_d = STATE_COMPUTE;
             end
+            // One sliding window computation
             STATE_COMPUTE: begin
                 if (n_cnt_q == WT_DIM - 1 & m_cnt_q == WT_DIM - 1 & (halo | rdata_fire))
                     state_d = STATE_DONE;
             end
+            // Produce OFM(y, x)
             STATE_DONE: begin
                 if (x == fm_dim - 1 & y == fm_dim - 1)
                     state_d = STATE_IDLE;

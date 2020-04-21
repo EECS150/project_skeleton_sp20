@@ -1,10 +1,20 @@
 
 // conv2D (IO) <-----> io_dmem_controller <-----> DMem (Riscv151)
+//
+// This module implements a controller bridging the IO accelerator (conv2D) and
+// the DMem of the processor. To make the problem more interesting, a delay parameter
+// is added on the IO communication. Therefore, reading/writing to DMem from IO
+// will not simply consume one cycle. To compensate for the IO delay, burst mode
+// is added such that one can issue a single R/W request and expect multiple R/W data items
+// from consecutive addresses in successive cycles.
+// The memory interface follows a (much) simplified version of AXI4 protocol by having
+// separate read and write channels, separate address and data channel.
+
 module io_dmem_controller #(
     parameter AWIDTH        = 32,
     parameter DWIDTH        = 32,
-    parameter MAX_BURST_LEN = 8,
-    parameter IO_LATENCY    = 10
+    parameter MAX_BURST_LEN = 8, // maximum burst length that the controller can support
+    parameter IO_LATENCY    = 10 // add synthetic delay to make the memory model more realistic
 ) (
     input clk,
     input rst,
@@ -167,6 +177,10 @@ module io_dmem_controller #(
         .clk(clk)
     );
 
+    // The logic to handle the case which 'resp_read_data_ready' suddenly goes LOW.
+    // We backup the current read data to a register, and use that register value
+    // for read reasponse data when response fires again.
+    // This extra complexity is caused by one-cycle read from DMem
     wire read_delay_q;
     REGISTER_R_CE #(.N(1), .INIT(0)) read_delay_reg (
         .q(read_delay_q),
@@ -184,6 +198,7 @@ module io_dmem_controller #(
         .clk(clk)
     );
 
+    // Need to setup valid R/W burst length
     wire [31:0] read_burst_len  = (req_read_len_q  == 0) ? 1 :
                                   (req_read_len_q  <  MAX_BURST_LEN) ? req_read_len_q  : MAX_BURST_LEN;
     wire [31:0] write_burst_len = (req_write_len_q == 0) ? 1 :
@@ -241,10 +256,12 @@ module io_dmem_controller #(
                 if (req_read_addr_fire)
                     state_read_d = STATE_READ_WAIT;
             end
+            // Wait on IO ... (synthetic delay)
             STATE_READ_WAIT: begin
                 if (read_wait_cnt_q == IO_LATENCY - 1)
                     state_read_d = STATE_READ_DMEM;
             end
+            // Read from DMem for a consecutive of 'read_burst_len' items
             STATE_READ_DMEM: begin
                 if (read_len_cnt_q == read_burst_len)
                     state_read_d = STATE_READ_IDLE;
@@ -259,14 +276,17 @@ module io_dmem_controller #(
                 if (req_write_addr_fire)
                     state_write_d = STATE_WRITE_WAIT;
             end
+            // Wait on IO ... (synthetic delay)
             STATE_WRITE_WAIT: begin
                 if (write_wait_cnt_q == IO_LATENCY - 1)
                     state_write_d = STATE_WRITE_DMEM;
             end
+            // Write to DMem for a consecutive of 'write_burst_len' items
             STATE_WRITE_DMEM: begin
                 if (write_len_cnt_q == write_burst_len - 1 & req_write_data_fire)
                     state_write_d = STATE_WRITE_SUCCESS;
             end
+            // Write success on the last item of the burst
             STATE_WRITE_SUCCESS: begin
                 if (resp_write_status_fire)
                     state_write_d = STATE_WRITE_IDLE;

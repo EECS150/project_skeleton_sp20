@@ -1,4 +1,26 @@
 
+// A (naive) 2D Convolution hardware implementation.
+// Sliding window stride is 1.
+// Padding 0s (halo cells).
+// Kernel/Weight dimension is parameterized (statically configurable).
+// Input/Output feature map (IFM/OFM) dimension is dynamically configurable.
+
+// A brief description of the implementation:
+//   - The weight elements are initially loaded to internal registers for reuse.
+//   - For each element of OFM, (WT_DIM x WT_DIM) elements of IFM of a current sliding window
+//     are fetched from the DMem via IO-DMem memory controller to do a dot product with
+//     the weight elements in WT_DIM cycles.
+//   - The result is written to DMem before moving to the next sliding window.
+//   - The whole process is repeated until all elements of OFM are computed.
+//   - An example of conv2D with 3x3 weight matrix:
+//   OFM(y, x) = IFM(y-1, x-1) * w(0, 0) + IFM(y-1, x+0) * w(0, 1) + IFM(y-1, x+1) * w(0, 2) +
+//             = IFM(y+0, x-1) * w(1, 0) + IFM(y+0, x+0) * w(1, 1) + IFM(y+0, x+1) * w(1, 2) +
+//             = IFM(y+1, x-1) * w(2, 0) + IFM(y+1, x+0) * w(2, 1) + IFM(y+1, x+1) * w(2, 2);
+
+// This naive implementation issues excessive memory requests to DMem.
+// No memory bursting and very little data reuse is leveraged.
+// No unrolling for parallelism.
+
 module conv2D_naive #(
     parameter AWIDTH  = 32,
     parameter DWIDTH  = 32,
@@ -7,7 +29,7 @@ module conv2D_naive #(
     input clk,
     input rst,
 
-    // Control signals
+    // Control/Status signals
     input start,
     output idle,
     output done,
@@ -51,6 +73,7 @@ module conv2D_naive #(
     wire wdata_valid;
     wire mem_if_idle, compute_idle;
 
+    // start register -- asserts when 'start', and stays HIGH until reset
     wire start_q;
     REGISTER_R_CE #(.N(1), .INIT(0)) start_reg (
         .q(start_q),
@@ -59,6 +82,7 @@ module conv2D_naive #(
         .rst(rst),
         .clk(clk));
 
+    // done register -- asserts when the conv2D is done, and stay HIGH until reset
     REGISTER_R_CE #(.N(1), .INIT(0)) done_reg (
         .q(done),
         .d(1'b1),
@@ -68,7 +92,7 @@ module conv2D_naive #(
 
     assign idle = mem_if_idle & compute_idle;
 
-    // Memory Interface Unit
+    // Memory Interface Unit -- to interface with IO-DMem controller
     conv2D_mem_if # (
         .AWIDTH(AWIDTH),
         .DWIDTH(DWIDTH),
@@ -107,9 +131,11 @@ module conv2D_naive #(
         .resp_write_status_valid(resp_write_status_valid), // input
         .resp_write_status_ready(resp_write_status_ready), // output
 
+        // Current OFM(y, x)
         .x(x),                                             // output
         .y(y),                                             // output
 
+        // Write data to DMem
         .wdata(wdata),                                     // input
         .wdata_valid(wdata_valid)                          // input
     );
@@ -126,14 +152,17 @@ module conv2D_naive #(
         .start(start),                      // input
         .idle(compute_idle),                // output
 
+        // Current OFM(y, x)
         .x(x),                              // input
         .y(y),                              // input
         .fm_dim(fm_dim),                    // input
 
+        // Read data from DMem
         .rdata(resp_read_data),             // output
         .rdata_valid(resp_read_data_valid), // output
         .rdata_ready(resp_read_data_ready), // input
 
+        // Write data to mem_if
         .wdata(wdata),                      // output
         .wdata_valid(wdata_valid)           // output
     );
