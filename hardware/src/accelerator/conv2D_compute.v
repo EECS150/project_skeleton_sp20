@@ -1,7 +1,8 @@
 
 module conv2D_compute #(
-    parameter WT_DIM  = 3,
-    parameter DWIDTH  = 32
+    parameter AWIDTH = 32,
+    parameter DWIDTH = 32,
+    parameter WT_DIM = 3
 ) (
     input clk,
     input rst,

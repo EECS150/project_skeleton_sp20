@@ -6,9 +6,11 @@ module conv2D_testbench();
     parameter CPU_CLOCK_PERIOD = 20;
     parameter CPU_CLOCK_FREQ   = 1_000_000_000 / CPU_CLOCK_PERIOD;
 
-    localparam FM_DIM  = 8;
-    localparam WT_DIM  = 3;
-    localparam DWIDTH  = 32;
+    localparam FM_DIM    = 8;
+    localparam WT_DIM    = 3;
+    localparam AWIDTH    = 14;
+    localparam DWIDTH    = 32;
+    localparam MEM_DEPTH = 16384;
 
     localparam WT_OFFSET  = 0;
     localparam IN_OFFSET  = WT_OFFSET + WT_DIM * WT_DIM;
@@ -19,102 +21,167 @@ module conv2D_testbench();
 
     reg [31:0] timeout_cycle = 50000;
 
-    reg start;
+    reg  start;
     wire idle;
     wire done;
-    reg  [31:0]       fm_dim;
-    reg  [31:0]       wt_offset, ifm_offset, ofm_offset;
-    wire [31:0]       mem_req_addr;
-    wire              mem_req_valid;
-    wire              mem_req_ready;
-    wire [DWIDTH-1:0] mem_req_data;
-    wire              mem_req_write;
-    wire [31:0]       mem_resp_data;
-    wire              mem_resp_valid;
-    wire              mem_resp_ready;
+    reg  [31:0] fm_dim;
+    reg  [31:0] wt_offset, ifm_offset, ofm_offset;
+
+    wire [AWIDTH-1:0] req_read_addr;
+    wire req_read_addr_valid;
+    wire req_read_addr_ready;
+    wire [31:0] req_read_len;
+
+    wire [DWIDTH-1:0] resp_read_data;
+    wire resp_read_data_valid;
+    wire resp_read_data_ready;
+
+    wire [AWIDTH-1:0] req_write_addr;
+    wire req_write_addr_valid;
+    wire req_write_addr_ready;
+    wire [31:0] req_write_len;
+
+    wire [DWIDTH-1:0] req_write_data;
+    wire req_write_data_valid;
+    wire req_write_data_ready;
+
+    wire [DWIDTH-1:0] resp_write_status;
+    wire resp_write_status_valid;
+    wire resp_write_status_ready;
+
+    wire [AWIDTH-1:0] dmem_addra, dmem_addrb;
+    wire [3:0]        dmem_wea, dmem_web;
+    wire [DWIDTH-1:0] dmem_dina, dmem_douta, dmem_dinb, dmem_doutb;
 
     // conv2D_naive <---> io_dmem_controller <---> DMem
 
     conv2D_naive #(
-        .WT_DIM(WT_DIM),
-        .DWIDTH(DWIDTH)
+        .AWIDTH(AWIDTH),
+        .DWIDTH(DWIDTH),
+        .WT_DIM(WT_DIM)
     ) conv2D_naive (
         .clk(clk),
         .rst(rst),
 
-        .start(start),                   // input
-        .idle(idle),                     // output
-        .done(done),                     // output
+        .start(start),                                     // input
+        .idle(idle),                                       // output
+        .done(done),                                       // output
 
-        .fm_dim(fm_dim),                 // input
-        .wt_offset(wt_offset),           // input
-        .ifm_offset(ifm_offset),         // input
-        .ofm_offset(ofm_offset),         // input
+        .fm_dim(fm_dim),                                   // input
+        .wt_offset(wt_offset),                             // input
+        .ifm_offset(ifm_offset),                           // input
+        .ofm_offset(ofm_offset),                           // input
 
-        .mem_req_addr(mem_req_addr),     // output
-        .mem_req_valid(mem_req_valid),   // output
-        .mem_req_ready(mem_req_ready),   // input
-        .mem_req_data(mem_req_data),     // output
-        .mem_req_write(mem_req_write),   // output
+        // Read Request Address channel
+        .req_read_addr(req_read_addr),                     // output
+        .req_read_addr_valid(req_read_addr_valid),         // output
+        .req_read_addr_ready(req_read_addr_ready),         // input
+        .req_read_len(req_read_len),                       // output
 
-        .mem_resp_data(mem_resp_data),   // input
-        .mem_resp_valid(mem_resp_valid), // input
-        .mem_resp_ready(mem_resp_ready)  // output
+        // Read Response channel
+        .resp_read_data(resp_read_data),                   // input
+        .resp_read_data_valid(resp_read_data_valid),       // input
+        .resp_read_data_ready(resp_read_data_ready),       // output
+
+        // Write Request Address channel
+        .req_write_addr(req_write_addr),                   // output
+        .req_write_addr_valid(req_write_addr_valid),       // output
+        .req_write_addr_ready(req_write_addr_ready),       // input
+        .req_write_len(req_write_len),                     // output
+
+        // Write Request Data channel
+        .req_write_data(req_write_data),                   // output
+        .req_write_data_valid(req_write_data_valid),       // output
+        .req_write_data_ready(req_write_data_ready),       // input
+
+        // Write Response channel
+        .resp_write_status(resp_write_status),             // output
+        .resp_write_status_valid(resp_write_status_valid), // output
+        .resp_write_status_ready(resp_write_status_ready)  // input
     );
 
-    // Simple memory model for testing
-    wire [13:0] dmem_addr;
-    wire [3:0]  dmem_wbe;
-    wire [DWIDTH-1:0] dmem_din, dmem_dout;
-    SYNC_RAM_WBE #(
-        .AWIDTH(14),
-        .DWIDTH(DWIDTH),
-        .DEPTH(16384)
-    ) dmem (
-        .q(dmem_dout),    // output
-        .d(dmem_din),     // input
-        .addr(dmem_addr), // input
-        .wbe(dmem_wbe),   // input
-        .clk(clk), .rst(rst));
-
     io_dmem_controller #(
-        .AWIDTH(14),
+        .AWIDTH(AWIDTH),
         .DWIDTH(DWIDTH),
-        .IO_DMEM_LATENCY(1)
+        .MAX_BURST_LEN(8),
+        .IO_LATENCY(10)
     ) io_dmem_controller (
         .clk(clk),
         .rst(rst),
 
-        .mem_req_addr(mem_req_addr),     // input
-        .mem_req_valid(mem_req_valid),   // input
-        .mem_req_ready(mem_req_ready),   // output
-        .mem_req_data(mem_req_data),     // input
-        .mem_req_write(mem_req_write),   // input
+        // Read Request Address channel
+        .req_read_addr(req_read_addr),                     // input
+        .req_read_addr_valid(req_read_addr_valid),         // input
+        .req_read_addr_ready(req_read_addr_ready),         // output
+        .req_read_len(req_read_len),                       // input
 
-        .mem_resp_data(mem_resp_data),   // output
-        .mem_resp_valid(mem_resp_valid), // output
-        .mem_resp_ready(mem_resp_ready), // input
+        // Read Response channel
+        .resp_read_data(resp_read_data),                   // output
+        .resp_read_data_valid(resp_read_data_valid),       // output
+        .resp_read_data_ready(resp_read_data_ready),       // input
 
-        .dmem_dout(dmem_dout),           // input
-        .dmem_din(dmem_din),             // output
-        .dmem_addr(dmem_addr),           // output
-        .dmem_wbe(dmem_wbe)              // output
+        // Write Request Address channel
+        .req_write_addr(req_write_addr),                   // input
+        .req_write_addr_valid(req_write_addr_valid),       // input
+        .req_write_addr_ready(req_write_addr_ready),       // output
+        .req_write_len(req_write_len),                     // input
+
+        // Write Request Data channel
+        .req_write_data(req_write_data),                   // input
+        .req_write_data_valid(req_write_data_valid),       // input
+        .req_write_data_ready(req_write_data_ready),       // output
+
+        // Write Response channel
+        .resp_write_status(resp_write_status),             // input
+        .resp_write_status_valid(resp_write_status_valid), // input
+        .resp_write_status_ready(resp_write_status_ready), // output
+
+        // DMem PortA <---> IO Read
+        .dmem_douta(dmem_douta), // input
+        .dmem_dina(dmem_dina),   // output
+        .dmem_addra(dmem_addra), // output
+        .dmem_wea(dmem_wea),     // output
+
+        // DMem PortB <---> IO Read
+        .dmem_doutb(dmem_doutb), // input
+        .dmem_dinb(dmem_dinb),   // output
+        .dmem_addrb(dmem_addrb), // output
+        .dmem_web(dmem_web)      // output
     );
 
-    reg [DWIDTH-1:0] fm_in_data     [FM_DIM*FM_DIM-1:0];
-    reg [DWIDTH-1:0] sw_fm_out_data [FM_DIM*FM_DIM-1:0];
-    reg [DWIDTH-1:0] weight_data     [WT_DIM*WT_DIM-1:0];
+    // DMem
+    XILINX_SYNC_RAM_DP_WBE #(
+        .AWIDTH(AWIDTH),
+        .DWIDTH(DWIDTH),
+        .DEPTH(MEM_DEPTH)
+    ) dmem (
+        .q0(dmem_douta),
+        .d0(dmem_dina),
+        .addr0(dmem_addra),
+        .wbe0(dmem_wea),
+
+        .q1(dmem_doutb),
+        .d1(dmem_dinb),
+        .addr1(dmem_addrb),
+        .wbe1(dmem_web),
+
+        .clk(clk), .rst(rst));
+
+
+    reg [DWIDTH-1:0] ifm_data    [FM_DIM*FM_DIM-1:0];
+    reg [DWIDTH-1:0] ofm_sw_data [FM_DIM*FM_DIM-1:0];
+    reg [DWIDTH-1:0] weight_data [WT_DIM*WT_DIM-1:0];
     reg [DWIDTH-1:0] d;
     integer x, y, m, n, i, j;
     integer idx, idy;
 
     initial begin
-        // init fm_in and weight data
+        // init ifm and weight data
         #0;
         for (y = 0; y < FM_DIM; y = y + 1) begin
             for (x = 0; x < FM_DIM; x = x + 1) begin
-                fm_in_data[y * FM_DIM + x]     = x;
-                sw_fm_out_data[y * FM_DIM + x] = 0;
+                ifm_data[y * FM_DIM + x]     = x;
+                ofm_sw_data[y * FM_DIM + x] = 0;
             end
         end
 
@@ -136,10 +203,10 @@ module conv2D_testbench();
                         if (idx < 0 || idx >= FM_DIM || idy < 0 || idy >= FM_DIM)
                             d = 0;
                         else
-                            d = fm_in_data[idy * FM_DIM + idx];
+                            d = ifm_data[idy * FM_DIM + idx];
 
-                        sw_fm_out_data[y * FM_DIM + x] = sw_fm_out_data[y * FM_DIM + x] +
-                                                         d * weight_data[m * WT_DIM + n];
+                        ofm_sw_data[y * FM_DIM + x] = ofm_sw_data[y * FM_DIM + x] +
+                                                      d * weight_data[m * WT_DIM + n];
                     end
                 end
             end
@@ -155,7 +222,7 @@ module conv2D_testbench();
             end
 
             for (i = 0; i < FM_DIM * FM_DIM; i = i + 1) begin
-                dmem.mem[IN_OFFSET  + i] = fm_in_data[i];
+                dmem.mem[IN_OFFSET  + i] = ifm_data[i];
                 dmem.mem[OUT_OFFSET + i] = 0;
             end
         end
@@ -164,10 +231,10 @@ module conv2D_testbench();
     task check_result;
         begin
             for (i = 0; i < FM_DIM * FM_DIM; i = i + 1) begin
-                if (dmem.mem[OUT_OFFSET + i] !== sw_fm_out_data[i]) begin
+                if (dmem.mem[OUT_OFFSET + i] !== ofm_sw_data[i]) begin
                     num_mismatches = num_mismatches + 1;
                     $display("Mismatches at %d: expected=%d, got=%d",
-                        i, sw_fm_out_data[i], dmem.mem[OUT_OFFSET + i]);
+                        i, ofm_sw_data[i], dmem.mem[OUT_OFFSET + i]);
                 end
             end
             if (num_mismatches == 0)
@@ -210,20 +277,23 @@ module conv2D_testbench();
             cycle = cycle + 1;
         end
 
-        #100;
-
         check_result();
         $finish();
     end
 
     always @(posedge clk) begin
-        $display("[Cycle %d] conv2D_naive.start=%b, conv2D_naive.idle=%b, conv2D_naive.done=%b, mem_req_addr=%h, mem_req_valid=%b, mem_req_ready=%b, mem_req_data=%h, mem_req_write=%b, mem_resp_data=%h, mem_resp_valid=%b, mem_resp_ready=%b, dmem_addr=%h, dmem_din=%h, dmem_dout=%h, dmem_wbe=%h, state=%d, acc_q=%d, m=%d, n=%d, x=%d, y=%d, wdata_valid=%b, wdata=%d, halo=%b, d=%d, wt0=%d, wt1=%d, wt2=%d, wt3=%d, wt4=%d, wt5=%d, wt6=%d, wt7=%d, wt8=%d",
+        $display("[Cycle %d] start=%b, idle=%b, done=%b, req_read_addr=%h, req_read_addr_valid=%b, req_read_addr_ready=%b, resp_read_data=%h, resp_read_data_valid=%b, resp_read_data_ready=%b, req_write_addr=%h, req_write_addr_valid=%b, req_write_addr_ready=%b, req_write_data=%h, req_write_data_valid=%b, req_write_data_ready=%b, dmem_addra=%d, dmem_dina=%h, dmem_douta=%h, dmem_wea=%h, dmem_addrb=%d, dmem_dinb=%h, dmem_doutb=%h, dmem_web=%h, mem_if_state=%d, compute_state=%d, acc_q=%d, m=%d, n=%d, x=%d, y=%d, wdata_valid=%b, wdata=%d, halo=%b, d=%d, wt0=%d, wt1=%d, wt2=%d, wt3=%d, wt4=%d, wt5=%d, wt6=%d, wt7=%d, wt8=%d",
             cycle, start, idle, done,
 
-            mem_req_addr, mem_req_valid, mem_req_ready, mem_req_data, mem_req_write,
-            mem_resp_data, mem_resp_valid, mem_resp_ready,
+            req_read_addr, req_read_addr_valid, req_read_addr_ready,
+            resp_read_data, resp_read_data_valid, resp_read_data_ready,
+            req_write_addr, req_write_addr_valid, req_write_addr_ready,
+            req_write_data, req_write_data_valid, req_write_data_ready,
 
-            dmem_addr, dmem_din, dmem_dout, dmem_wbe,
+            dmem_addra, dmem_dina, dmem_douta, dmem_wea,
+            dmem_addrb, dmem_dinb, dmem_doutb, dmem_web,
+
+            conv2D_naive.mem_if_unit.state_q,
 
             conv2D_naive.compute_unit.state_q, conv2D_naive.compute_unit.acc_q,
             conv2D_naive.compute_unit.m_cnt_q, conv2D_naive.compute_unit.n_cnt_q,
