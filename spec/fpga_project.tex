@@ -746,8 +746,128 @@ Checkoff will consist of a demonstration of the BIOS functionality, loading a pr
 
 \pagebreak
 
-\section{Checkpoint 3 - TBA}
+\section{Checkpoint 3 - Hardware-accelerated 2D Convolutional Engine}
 
+For this checkpoint, you are tasked with designing an efficient, parameterized 2D Convolutional hardware generator. You will be comparing the performance of your generator against the conv2D software code running on your RISC-V processor in Checkpoint 2.
+
+\subsection{2D Convolutional Operation}
+
+2D Convolution is prevalent in many domains, ranging from signal and image processing to deep learning. An input matrix is convolved with a kernel, or weight matrix in a sliding window fashion to produce an output matrix. We refer to the input matrix as input feature map, and output matrix as output feature map. For simplicity, our conv2D implementation only supports square matrices for both feature map and weight data. In addition, the sliding window stride is always 1 and we pad zeros to the boundary of the input feature map. The supported datatype is 32-bit integer. The feature map dimension is a power-of-two value, and the weight dimension is an odd number.
+
+Let's look at the software C code of a typical 2D convolutional operation.
+
+\begin{minted}{C}
+for (y = 0; y < FM_DIM; y = y + 1) {
+  for (x = 0; x < FM_DIM; x = x + 1) {
+    for (m = 0; m < WT_DIM; m = m + 1) {
+      for (n = 0; n < WT_DIM; n = n + 1) {
+        idx = x - WT_DIM / 2 + n;
+        idy = y - WT_DIM / 2 + m;
+        // Check for halo cells
+        if (idx < 0 || idx >= FM_DIM || idy < 0 || idy >= FM_DIM)
+          d = 0;
+        else
+          d = ifm_data[idy * FM_DIM + idx];
+
+        ofm_sw_data[y * FM_DIM + x] = ofm_sw_data[y * FM_DIM + x] +
+                                      d * weight_data[m * WT_DIM + n];
+      }
+    }
+  }
+}
+\end{minted}
+
+The code contains many levels of nested for loops. The outermost loops (y, x) iterate over each element of the output feature map, and the innermost loops (m, n) step through the weights to perform a dot product with a current sliding window of an input feature map. The input feature map array, output feature map array, and weight array are all stored in the data memory \texttt{DMem}. Additional check is required for halo cells (beyond the input matrix's boundary).
+
+From the previous lab and homework execises, you already had some practice on mapping an algorithmic description of a problem (e.g., loop form) into a circuit implementation. This checkpoint brings it to another level by adding more complexity in terms of the number of loop levels and the amount of operations needed to carry out per loop iteration. How do we make sense between a software loop iteration and a hardware cycle? Would it be possible to map one or more software loop iterations to one hardware cycle? 
+
+A straight mapping from the software description to hardware implementation, without considering many inherent characteristics of the system (memory latency, buffering, available compute blocks, etc.), gives poor result. Have a look at the baseline conv2D code given to you: \verb|hardware/src/accelerator/conv2D_naive.v|. This implementation reads the elements of input feature map redundantly without considering the fact that there are some overlap between the current and the next sliding window (with a stride of 1). Therefore, the memory latency quickly overwhelms the performance and leaves the compute unit starved for data. To build an efficient accelerator, one needs to not only understand how the software code works, but also be able to transforms it to some form that is hardware-friendly in terms of memory access pattern, data reuse, and parallel execution units.
+
+\subsection{IO Memory interface for data}
+
+Our conv2D accelerator needs to read and write data to \texttt{DMem}. It adopts an interface similar to the AXI4 bus protocol, though much simpler. Separate read and write request and response channels are included. For each channel, a handshake mechanism (Ready/Valid) to used to indicate a successful transaction.
+
+\begin{itemize}
+
+\item \textbf{req\_read\_addr}: Memory read request address (output)
+\item \textbf{req\_read\_addr\_valid}: Memory read request address valid signal (output)
+\item \textbf{req\_read\_addr\_ready}: Memory read request address ready signal (input)
+\item \textbf{req\_read\_len}: Memory read burst length
+
+\item \textbf{resp\_read\_data}: Memory read response data (input)
+\item \textbf{resp\_read\_data\_valid}: Memory read response data valid signal (input)
+\item \textbf{resp\_read\_data\_ready}: Memory read response data ready signal (output)
+
+\item \textbf{req\_write\_addr\_valid}: Memory write request address (output)
+\item \textbf{req\_write\_addr\_ready}: Memory write request address valid signal (output)
+\item \textbf{req\_write\_len}: Memory write burst length
+
+\item \textbf{req\_write\_data}: Memory write request data (output)
+\item \textbf{req\_write\_data\_valid}: Memory write request data valid (output)
+\item \textbf{req\_write\_data\_ready}: Memory write request data ready (input)
+
+\item \textbf{resp\_write\_status}: Memory write response status (input). 1 indicates a write sucess, 0 indicates a write failure
+\item \textbf{resp\_write\_status\_valid}: Memory write response status valid signal (input)
+\item \textbf{resp\_write\_status\_ready}: Memory write response status ready signal (output)
+
+\end{itemize}
+
+The memory signals connect to an \texttt{IO-DMem} controller (\verb|hardware/src/accelerator/io_dmem_controller.v|). A control logic in the controller converts the memory interfaces to the Block RAM interfaces of \texttt{DMem}. To enable read and write to DMem in parallel, we will use a dual-ported memory template for \texttt{DMem}. Port a is for IO read and \texttt{Riscv151}'s access, and port b is for IO write.
+
+The memory interface supports burst transaction. For instances, if a burst length of 4 is set for read request at the address 30, the \texttt{IO-DMem} controller returns 4 data items from \texttt{DMem} of address 30, 31, 32, and 33. Similar to write. This is useful in the situation where the accelerator knows that it needs multiple items in row. A burst length of 1 means no burst mode. Note that, for a successful completion of one burst item transaction, both the ready and valid signals of read response data channel (or write request data channel) must be HIGH.
+
+In addition, reading and writing to \texttt{IO-DMem} incurs some latency. The latency (configurable in \verb|io_dmem_controller.v|) mimics the real setting where accessing to external memory is expensive, and one would need to think of a strategy to minimize the number of memory accesses to optimize performance.
+
+\subsection{IO Memory-mapped addresses for control, status, and scalar signals of conv2D accelerator}
+
+You will need to extend your IO memory-mapped logic to integrate the conv2D accelerator to Riscv151. We will use the load and store instructions to the memory-mapped addresses as a mechanism to control (start) or check the status of conv2D (idle, done). In addition, we set the memory offsets of weight, input/output feature map arrays so that conv2D knows where to access (read/write) the correct data. This is a neat trick to avoid hard-coding the addresses or recompiling the whole bitstream everytime we change the memory layout of the arrays. The feature map dimension can also be set in software code. Our conv2D accelerator does not depend on any specific feature map dimension, but weight dimension. See the sofware code \verb|software/conv2D/conv2D.c| for the details of setting up various conv2D parameters in software.
+
+\begin{table}[hbt]
+  \begin{center}
+    \caption{I/O Memory Map for conv2D}
+    \label{mem_map_conv2D}
+    \begin{adjustbox}{width=\columnwidth,center}
+    \begin{tabular}{l l l l}
+      \toprule
+      \textbf{Address} & \textbf{Function} & \textbf{Access} & \textbf{Data Encoding}\\
+      \midrule
+      \verb|32'h80000040| & conv2D control & Write & N/A \\
+      \verb|32'h80000044| & conv2D status & Read & \verb|{30'b0, idle, done}| \\
+      \verb|32'h80000048| & conv2D feature map dimension & Write & data[31:0] \\
+      \verb|32'h8000004c| & conv2D weight offset & Write & data[31:0] \\
+      \verb|32'h80000050| & conv2D input feature map offset & Write & data[31:0] \\
+      \verb|32'h80000054| & conv2D output feature map offset & Write & data[31:0] \\
+      \bottomrule
+    \end{tabular}
+    \end{adjustbox}
+  \end{center}
+\end{table}
+
+\subsection{System integration}
+
+
+\subsection{Conv2D Streaming Engine}
+
+Figure \ref{fig:conv2D_stream} demonstrates a streaming architectural engine that convolves the input feature map matrix with a 3x3 weight matrix. FIFOs are used to buffer temporary input and output items. Initially, the accelerator is pre-loaded with the weight data from the memory interface (not shown here) into the internal registers of the Processing Elements (PEs). Each PE performs a 1D convolution with its own set of weight elements and enqueues the result to a FIFO. A shift register is used to hold input feature map elements in a sliding window fashion. For a detailed cycle-by-cycle explanation of how the engine works, refer to the slides here TBD.
+
+The advantage of this architectural execution is the input (output) can be streamed sequentially, starting from the first to the last element, from the memory interface, if the input (output) feature map is stored in a contiguous region in the memory. This simplifies the logic regarding read/write to specific memory addresses for input (output) as in the naive implementation. If the memory interface supports burst mode, one can set the burst size to be the feature map size. Virtually, only one memory request for read and write is needed for such computation. Once there is a data item enqueued in an input FIFO buffer, the engine starts the computation.
+
+\begin{figure}[hbt]
+\begin{center}
+  \includegraphics[width=0.7\textwidth]{conv2D_stream.png}
+  \caption{Conv2D streaming dataflow engine for 3x3 weight matrix}
+  \label{fig:conv2D_stream}
+\end{center}
+\end{figure}
+
+As a suggestion, you can follow the block diagram to build your conv2D accelerator. You can make your own modifications to the suggested architecture, for example, by inserting additional registers to each PE to improve timing. Nonetheless, you are also welcomed to pursue your own ideas of building an efficient conv2D accelerator.
+
+\subsection{Checkpoint 3 Deliverables}
+
+ABCD
+
+
+\pagebreak
 \section{Final Checkpoint - Optimization - TBA}
 %This optimization checkpoint is lumped with the final checkoff.
 %This part of the project is designed to give students freedom to implement the optimizations of their choosing to improve the performance of their processor.
