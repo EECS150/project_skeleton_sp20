@@ -13,8 +13,8 @@
 module io_dmem_controller #(
     parameter AWIDTH        = 32,
     parameter DWIDTH        = 32,
-    parameter MAX_BURST_LEN = 8, // maximum burst length that the controller can support
-    parameter IO_LATENCY    = 10 // add synthetic delay to make the memory model more realistic
+    parameter MAX_BURST_LEN = 16384, // maximum burst length that the controller can support
+    parameter IO_LATENCY    = 10     // add synthetic delay to make the memory model more realistic
 ) (
     input clk,
     input rst,
