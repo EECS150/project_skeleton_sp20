@@ -4,11 +4,11 @@
 #include "uart.h"
 #include "memory_map.h"
 
-#define LOG2_FM_DIM  3
-#define FM_DIM      (1 << LOG2_FM_DIM)
-#define FM_SIZE     (1 << (LOG2_FM_DIM << 1)) // FM_DIM x FM_DIM
-#define WT_DIM       3 
-#define WT_SIZE      9 // WT_DIM x WT_DIM
+#define LOG2_FM_DIM 3
+#define FM_DIM      1 << LOG2_FM_DIM
+#define FM_SIZE     FM_DIM * FM_DIM
+#define WT_DIM      3
+#define WT_SIZE     WT_DIM * WT_DIM
 
 // input/output feature map matrices
 static int32_t ifm[FM_SIZE]    = {0};
