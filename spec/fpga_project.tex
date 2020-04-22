@@ -838,7 +838,23 @@ Our conv2D accelerator needs to read and write data to \texttt{DMem}. It adopts 
 
 The memory signals connect to an \texttt{IO-DMem} controller (\verb|hardware/src/accelerator/io_dmem_controller.v|). A control logic in the controller converts the memory interfaces to the Block RAM interfaces of \texttt{DMem}. To enable read and write to DMem in parallel, we will use a dual-ported memory template for \texttt{DMem}. Port a is for IO read and \texttt{Riscv151}'s access, and port b is for IO write.
 
-The memory interface supports burst transaction. For instances, if a burst length of 4 is set for read request at the address 30, the \texttt{IO-DMem} controller returns 4 data items from \texttt{DMem} of address 30, 31, 32, and 33. Similar to write. This is useful in the situation where the accelerator knows that it needs multiple items in row. A burst length of 1 means no burst mode. Note that, for a successful completion of one burst item transaction, both the ready and valid signals of read response data channel (or write request data channel) must be HIGH.
+The memory interface supports burst transaction. For instances, if a burst length of 8 is set for read request at the address 10, the \texttt{IO-DMem} controller returns 8 data items from \texttt{DMem} of address 10, 11, 12, 13, 14, 15, 16, and 17, as shown in Figure \ref{fig:read_burst8}. Similar to write in Figure \ref{fig:write_burst8}. This is useful in the situation where the accelerator knows that it needs multiple items in row. A burst length of 1 means no burst mode. Note that, for a successful completion of one burst item (beat) transaction, both the ready and valid signals of read response data channel (or write request data channel) must be HIGH.
+
+\begin{figure}[hbt]
+\begin{center}
+  \includegraphics[width=1.0\textwidth]{read_burst8.png}
+  \caption{A waveform of memory read with a burst length of 8. Note that \textbf{resp\_read\_data\_valid} and \textbf{resp\_read\_data\_ready} must be high for one read transaction beat.}
+  \label{fig:read_burst8}
+\end{center}
+\end{figure}
+
+\begin{figure}[hbt]
+\begin{center}
+  \includegraphics[width=1.0\textwidth]{write_burst8.png}
+  \caption{A waveform of memory write with a burst length of 8. Note that \textbf{req\_write\_data\_valid} and textbf{req\_write\_data\_ready} must be high for one write trasaction beat.}
+  \label{fig:write_burst8}
+\end{center}
+\end{figure}
 
 Also note that our accelerator uses word-level addressing scheme, as oppose to byte-level addressing in RISC-V architecture. A memory read (write) retrieves (update) a full word of \texttt{DMem}.
 
