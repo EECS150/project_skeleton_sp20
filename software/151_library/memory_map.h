@@ -4,6 +4,11 @@
 #define CYCLE_COUNTER (*((volatile uint32_t*)0x80000010))
 #define INSTRUCTION_COUNTER (*((volatile uint32_t*)0x80000014))
 
+#define GPIO_FIFO_EMPTY (*((volatile uint32_t*)0x80000020) & 0x01)
+#define GPIO_FIFO_DATA (*((volatile uint32_t*)0x80000024))
+#define SWITCHES (*((volatile uint32_t*)0x80000028) & 0x03)
+#define LED_CONTROL (*((volatile uint32_t*)0x80000030))
+
 #define CONV2D_START      (*((volatile uint32_t*) 0x80000040))
 #define CONV2D_IDLE       (*((volatile uint32_t*) 0x80000044) & 0x02)
 #define CONV2D_DONE       (*((volatile uint32_t*) 0x80000044) & 0x01)
