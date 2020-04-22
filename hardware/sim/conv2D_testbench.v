@@ -19,7 +19,7 @@ module conv2D_testbench();
     initial clk = 0;
     always #(CPU_CLOCK_PERIOD/2) clk = ~clk;
 
-    reg [31:0] timeout_cycle = 50000;
+    reg [31:0] timeout_cycle = 500000;
 
     reg  start;
     wire idle;
@@ -142,7 +142,7 @@ module conv2D_testbench();
         .dmem_addra(dmem_addra), // output
         .dmem_wea(dmem_wea),     // output
 
-        // DMem PortB <---> IO Read
+        // DMem PortB <---> IO Write
         .dmem_doutb(dmem_doutb), // input
         .dmem_dinb(dmem_dinb),   // output
         .dmem_addrb(dmem_addrb), // output
@@ -185,9 +185,11 @@ module conv2D_testbench();
             end
         end
 
-        weight_data[0] = 1; weight_data[1] = 2; weight_data[2] = 1;
-        weight_data[3] = 4; weight_data[4] = 5; weight_data[5] = 4;
-        weight_data[6] = 1; weight_data[7] = 2; weight_data[8] = 1;
+        for (m = 0; m < WT_DIM; m = m + 1) begin
+            for (n = 0; n < WT_DIM; n = n + 1) begin
+                weight_data[m * WT_DIM + n] = n;
+            end
+        end
     end
 
     initial begin
@@ -277,39 +279,9 @@ module conv2D_testbench();
             cycle = cycle + 1;
         end
 
+        $display("Simulation cycles. %d", cycle);
         check_result();
         $finish();
-    end
-
-    always @(posedge clk) begin
-        $display("[Cycle %d] start=%b, idle=%b, done=%b, req_read_addr=%h, req_read_addr_valid=%b, req_read_addr_ready=%b, resp_read_data=%h, resp_read_data_valid=%b, resp_read_data_ready=%b, req_write_addr=%h, req_write_addr_valid=%b, req_write_addr_ready=%b, req_write_data=%h, req_write_data_valid=%b, req_write_data_ready=%b, dmem_addra=%d, dmem_dina=%h, dmem_douta=%h, dmem_wea=%h, dmem_addrb=%d, dmem_dinb=%h, dmem_doutb=%h, dmem_web=%h, mem_if_state=%d, compute_state=%d, acc_q=%d, m=%d, n=%d, x=%d, y=%d, wdata_valid=%b, wdata=%d, halo=%b, d=%d, wt0=%d, wt1=%d, wt2=%d, wt3=%d, wt4=%d, wt5=%d, wt6=%d, wt7=%d, wt8=%d",
-            cycle, start, idle, done,
-
-            req_read_addr, req_read_addr_valid, req_read_addr_ready,
-            resp_read_data, resp_read_data_valid, resp_read_data_ready,
-            req_write_addr, req_write_addr_valid, req_write_addr_ready,
-            req_write_data, req_write_data_valid, req_write_data_ready,
-
-            dmem_addra, dmem_dina, dmem_douta, dmem_wea,
-            dmem_addrb, dmem_dinb, dmem_doutb, dmem_web,
-
-            conv2D_naive.mem_if_unit.state_q,
-
-            conv2D_naive.compute_unit.state_q, conv2D_naive.compute_unit.acc_q,
-            conv2D_naive.compute_unit.m_cnt_q, conv2D_naive.compute_unit.n_cnt_q,
-            conv2D_naive.compute_unit.x, conv2D_naive.compute_unit.y,
-            conv2D_naive.compute_unit.wdata_valid, conv2D_naive.compute_unit.wdata,
-            conv2D_naive.compute_unit.halo, conv2D_naive.compute_unit.d,
-            conv2D_naive.compute_unit.wt_regs_q[0], 
-            conv2D_naive.compute_unit.wt_regs_q[1], 
-            conv2D_naive.compute_unit.wt_regs_q[2], 
-            conv2D_naive.compute_unit.wt_regs_q[3], 
-            conv2D_naive.compute_unit.wt_regs_q[4], 
-            conv2D_naive.compute_unit.wt_regs_q[5], 
-            conv2D_naive.compute_unit.wt_regs_q[6], 
-            conv2D_naive.compute_unit.wt_regs_q[7], 
-            conv2D_naive.compute_unit.wt_regs_q[8]
-        );
     end
 
     initial begin
