@@ -862,7 +862,7 @@ In addition, reading and writing to \texttt{IO-DMem} incurs some latency. The la
 
 \subsection{IO Memory-mapped addresses}
 
-You will need to extend your IO memory-mapped logic to integrate the conv2D accelerator to Riscv151. We will use the load and store instructions to the memory-mapped addresses as a mechanism to control (start) or check the status of conv2D (idle, done). In addition, we set the memory offsets of weight, input/output feature map arrays so that conv2D knows where to access (read/write) the correct data in \texttt{DMem}. This is a neat trick to avoid hard-coding the addresses or recompiling the whole bitstream everytime we change the memory layout of the arrays. The feature map dimension can also be set in software code. Our conv2D accelerator does not depend on any specific feature map dimension, but weight dimension. See the sofware code \verb|software/conv2D/conv2D.c| for the details of setting up various conv2D parameters in software.
+You will need to extend your IO memory-mapped logic to integrate the conv2D accelerator to Riscv151. We will use the load and store instructions to the memory-mapped addresses as a mechanism to control (start, reset) or check the status of conv2D (idle, done). For reset the accelerator, we use the same IO address as counters reset. In addition, we set the memory offsets of weight, input/output feature map arrays so that conv2D knows where to access (read/write) the correct data in \texttt{DMem}. This is a neat trick to avoid hard-coding the addresses or recompiling the whole bitstream everytime we change the memory layout of the arrays. The feature map dimension can also be set in software code. Our conv2D accelerator does not depend on any specific feature map dimension, but weight dimension. See the sofware code \verb|software/conv2D/conv2D.c| for the details of setting up various conv2D parameters in software.
 
 \begin{table}[hbt]
   \begin{center}
@@ -873,7 +873,8 @@ You will need to extend your IO memory-mapped logic to integrate the conv2D acce
       \toprule
       \textbf{Address} & \textbf{Function} & \textbf{Access} & \textbf{Data Encoding}\\
       \midrule
-      \verb|32'h80000040| & conv2D control & Write & N/A \\
+      \verb|32'h80000018| & conv2D control (reset) & Write & N/A \\
+      \verb|32'h80000040| & conv2D control (start) & Write & N/A \\
       \verb|32'h80000044| & conv2D status & Read & \verb|{30'b0, idle, done}| \\
       \verb|32'h80000048| & conv2D feature map dimension & Write & IO store data (32-bit) \\
       \verb|32'h8000004c| & conv2D weight offset & Write & IO store data (32-bit) \\
@@ -966,7 +967,7 @@ Note that you don't have to generate a new bitstream if you only change the feat
 \end{itemize} 
 
 \newpage
-\section{Final Checkpoint - Optimization - TBA}
+\section{Final Checkpoint - Optimization}
 This optimization checkpoint is lumped with the final checkoff.
 This part of the project is designed to give students freedom to implement the optimizations of their choosing to improve the performance of their processor.
 
@@ -980,7 +981,7 @@ The number of instructions is fixed, but you have freedom to change the CPI and 
 Often you will find that you will have to sacrifice CPI to achieve a higher clock frequency, but there also will exist opportunities to improve one or both of the variables without compromises.
 
 \subsection{Grading on Optimization: Frequency vs. CPI}
-You will receive a full credit for the final checkpoint if you can push your clock frequency of your working \textbf{Riscv151} + \textbf{conv2D\_opt} implementation to 100 MHz. You must demonstrate that your processor has a working BIOS, can load and execute \textbf{mmult} (CPI does not need to be less than or equal to 1.2), and can execute conv2D accelerator.
+You will receive a full credit for the final checkpoint if you can push your clock frequency of your working \textbf{Riscv151} + \textbf{conv2D\_opt} implementation to 100 MHz. You must demonstrate that your processor has a working BIOS, can load and execute \textbf{mmult} (CPI does not need to be less than or equal to 1.2), and can execute conv2D accelerator (with a weight dimension of 3).
 
 As a baseline, you must improve the achievable frequency of your existing implementation since Checkpoint 2.
 
@@ -1007,12 +1008,12 @@ This is a circuit that can create a new clock from an existing clock with a user
 The \verb|clk_in1| input clock of the PLL is driven by the 125 MHz \verb|CLK_125MHZ_FPGA|.
 The frequency of \verb|clk_out1| is calculated as:
 \begin{equation*}
-  \mathtt{clk_out1}_f = \mathtt{clk_in1}_f \cdot \frac{\mathtt{CLKFBOUT\_MULT_F}}{\mathtt{DIVCLK\_DIVIDE} \cdot \mathtt{CLKOUT0\_DIVIDE}}
+  \mathtt{clk\_out1}\_f = \mathtt{clk\_in1}\_f \cdot \frac{\mathtt{CLKFBOUT\_MULT_F}}{\mathtt{DIVCLK\_DIVIDE} \cdot \mathtt{CLKOUT0\_DIVIDE}}
 \end{equation*}
 
 In our case we get:
 \begin{equation*}
-  \mathtt{clk_out1}_f = 125 \text{ MHz} \cdot \frac{8}{1 \cdot 10} = 50 \text{ MHz}
+  \mathtt{clk\_out1}\_f = 125 \text{ MHz} \cdot \frac{8}{1 \cdot 10} = 50 \text{ MHz}
 \end{equation*}
 
 You just need to change the local parameter \verb|CPU_CLOCK_PERIOD| in \verb|z1top.v| to set the target clock frequency for your CPU.
