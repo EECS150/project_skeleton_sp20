@@ -862,7 +862,7 @@ In addition, reading and writing to \texttt{IO-DMem} incurs some latency. The la
 
 \subsection{IO Memory-mapped addresses}
 
-You will need to extend your IO memory-mapped logic to integrate the conv2D accelerator to Riscv151. We will use the load and store instructions to the memory-mapped addresses as a mechanism to control (start, reset) or check the status of conv2D (idle, done). For reset the accelerator, we use the same IO address as counters reset. In addition, we set the memory offsets of weight, input/output feature map arrays so that conv2D knows where to access (read/write) the correct data in \texttt{DMem}. This is a neat trick to avoid hard-coding the addresses or recompiling the whole bitstream everytime we change the memory layout of the arrays. The feature map dimension can also be set in software code. Our conv2D accelerator does not depend on any specific feature map dimension, but weight dimension. See the sofware code \verb|software/conv2D/conv2D.c| for the details of setting up various conv2D parameters in software.
+You will need to extend your IO memory-mapped logic to integrate the conv2D accelerator to Riscv151. We will use the load and store instructions to the memory-mapped addresses as a mechanism to control (start, reset) or check the status of conv2D (idle, done). To reset the accelerator, we use the same IO address as counters reset. In addition, we set the memory offsets of weight, input/output feature map arrays so that conv2D knows where to access (read/write) the correct data in \texttt{DMem}. This is a neat trick to avoid hard-coding the addresses or recompiling the whole bitstream everytime we change the memory layout of the arrays. The feature map dimension can also be set in software code. Our conv2D accelerator does not depend on any specific feature map dimension, but weight dimension. See the sofware code \verb|software/conv2D/conv2D.c| for the details of setting up various conv2D parameters in software.
 
 \begin{table}[hbt]
   \begin{center}
@@ -934,7 +934,7 @@ make sim tb=conv2D_testbench
 
 The testbench does not invoke any software MIF file nor the RISC-V core that you designed in Checkpoint 2. Rather, it tests the functionality of the conv2D accelerator with \texttt{IO\_DMem} controller in place. A memory block is used to initialize data for testing. You may want to use the testbench when you design your own conv2D.
 
-Once you confirm that the given code passes the simulation, the next step is integrating \texttt{conv2D\_naive} to your existing Riscv151 processor, along with \texttt{io\_dmem} controller. You need to expand your IO memory-mapped logic to perform load/store to the memory addresses of conv2D as mentioned in the section above, so that the CPU can control the conv2D accelerator from software. In addition, you will also need to convert \texttt{DMem} to dual-port memory block. Use \texttt{port a} for reading from \texttt{DMem}, and \texttt{port b} for writing to \texttt{DMem} from \texttt{IO\_DMem} controller.
+Once you confirm that the given code passes the simulation, the next step is integrating \texttt{conv2D\_naive} to your existing Riscv151 processor, along with \texttt{io\_dmem} controller. You need to expand your IO memory-mapped logic to perform load/store to the memory addresses of conv2D as mentioned in the section above, so that the CPU can control the conv2D accelerator from software. In addition, you will also need to convert \texttt{DMem} to dual-port memory block. Use \texttt{port a} for reading from \texttt{DMem}, and \texttt{port b} for writing to \texttt{DMem} from \texttt{IO\_DMem} controller. Don't forget to use the counters reset signal along with system reset to reset your conv2D module.
 
 Next, generate a bitstream to configure your FPGA. Run the conv2D software program using the same command as in \texttt{mmult} case. Alternatively, you can do
 
@@ -949,7 +949,7 @@ Once you get a sense of how the entire flow works, it's time to code your own co
 
 \subsection{Checkpoint 3 Deliverables}
 
-By \textbf{May 2, 2020, 11.59PM}, please have the following items submitted to Piazza as a private note to the TA to check off.
+By \textbf{Sunday May 3, 2020, 11.59PM}, please have the following items submitted to Piazza as a private note to the TA to check off.
 
 \begin{itemize}
 \item A commit ID of your fully working Riscv151 + conv2D\_opt system.
