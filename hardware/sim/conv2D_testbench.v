@@ -103,7 +103,6 @@ module conv2D_testbench();
     io_dmem_controller #(
         .AWIDTH(AWIDTH),
         .DWIDTH(DWIDTH),
-        .MAX_BURST_LEN(8),
         .IO_LATENCY(10)
     ) io_dmem_controller (
         .clk(clk),
