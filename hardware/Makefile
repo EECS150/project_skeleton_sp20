@@ -17,6 +17,8 @@ else ifeq ($(tb), c_testbench)
 sw = c_test
 else ifeq ($(tb), strcmp_testbench)
 sw = strcmp
+else ifeq ($(tb), conv2D_hw_testbench)
+sw = conv2D_hw
 else ifeq ($(tb), isa_testbench)
 sw = riscv-isa-tests
 test = all
