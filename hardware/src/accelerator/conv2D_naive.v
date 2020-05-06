@@ -72,6 +72,7 @@ module conv2D_naive #(
     wire [DWIDTH-1:0] wdata;
     wire wdata_valid;
     wire mem_if_idle, compute_idle;
+    wire done_q;
 
     assign done = ~start & done_q;
 
