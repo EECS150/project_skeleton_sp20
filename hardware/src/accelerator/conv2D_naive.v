@@ -73,21 +73,23 @@ module conv2D_naive #(
     wire wdata_valid;
     wire mem_if_idle, compute_idle;
 
+    assign done = ~start & done_q;
+
     // start register -- asserts when 'start', and stays HIGH until reset
     wire start_q;
     REGISTER_R_CE #(.N(1), .INIT(0)) start_reg (
         .q(start_q),
         .d(1'b1),
         .ce(start),
-        .rst(rst),
+        .rst(done | rst),
         .clk(clk));
 
     // done register -- asserts when the conv2D is done, and stay HIGH until reset
     REGISTER_R_CE #(.N(1), .INIT(0)) done_reg (
-        .q(done),
+        .q(done_q),
         .d(1'b1),
         .ce(start_q & mem_if_idle & compute_idle),
-        .rst(rst),
+        .rst(start | rst),
         .clk(clk));
 
     assign idle = mem_if_idle & compute_idle;
