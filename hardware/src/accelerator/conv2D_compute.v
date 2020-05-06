@@ -32,16 +32,17 @@ module conv2D_compute #(
     localparam WT_SIZE     = WT_DIM  * WT_DIM;
     localparam HALF_WT_DIM = WT_DIM >> 1;
 
-    localparam STATE_IDLE    = 2'b00;
-    localparam STATE_READ_WT = 2'b01;
-    localparam STATE_COMPUTE = 2'b10;
-    localparam STATE_DONE    = 2'b11;
+    localparam STATE_IDLE       = 3'b000;
+    localparam STATE_READ_WT    = 3'b001;
+    localparam STATE_COMPUTE    = 3'b010;
+    localparam STATE_DONE_DELAY = 3'b011;
+    localparam STATE_DONE       = 3'b100;
 
     // state register
-    wire [1:0] state_q;
-    reg  [1:0] state_d;
+    wire [2:0] state_q;
+    reg  [2:0] state_d;
 
-    REGISTER_R #(.N(2), .INIT(STATE_IDLE)) state_reg (
+    REGISTER_R #(.N(3), .INIT(STATE_IDLE)) state_reg (
         .q(state_q),
         .d(state_d),
         .rst(rst),
@@ -161,8 +162,27 @@ module conv2D_compute #(
         end
     endgenerate
 
-    assign acc_d   = acc_q + wt_regs_q[0] * d;
-    assign acc_ce  = read_halo | read_fm;
+
+    wire [31:0] d_pipe_q;
+    REGISTER #(.N(32)) d_pipe_reg (
+        .q(d_pipe_q),
+        .d(d),
+        .clk(clk));
+
+    wire [31:0] wt0_pipe_q;
+    REGISTER #(.N(32)) wt0_pipe_reg (
+        .q(wt0_pipe_q),
+        .d(wt_regs_q[0]),
+        .clk(clk));
+
+    wire read_d_pipe_q;
+    REGISTER #(.N(1)) read_d_pipe_reg (
+        .q(read_d_pipe_q),
+        .d(read_halo | read_fm),
+        .clk(clk));
+
+    assign acc_d   = acc_q + wt0_pipe_q * d_pipe_q;
+    assign acc_ce  = read_d_pipe_q;
     assign acc_rst = (state_q == STATE_DONE) | idle | rst;
 
     assign idle = (state_q == STATE_IDLE);
@@ -182,7 +202,11 @@ module conv2D_compute #(
             // One sliding window computation
             STATE_COMPUTE: begin
                 if (n_cnt_q == WT_DIM - 1 & m_cnt_q == WT_DIM - 1 & (halo | rdata_fire))
-                    state_d = STATE_DONE;
+                    state_d = STATE_DONE_DELAY;
+
+            end
+            STATE_DONE_DELAY: begin
+                state_d = STATE_DONE;
             end
             // Produce OFM(y, x)
             STATE_DONE: begin
@@ -198,4 +222,5 @@ module conv2D_compute #(
 
     assign wdata       = acc_q;
     assign wdata_valid = (state_q == STATE_DONE);
+
 endmodule
